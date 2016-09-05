@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.mustbe.consulo.mono.dotnet.module.extension;
+package consulo.mono.dotnet.module.extension;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mustbe.consulo.dotnet.compiler.DotNetMacroUtil;
+import consulo.dotnet.compiler.DotNetMacroUtil;
 import consulo.dotnet.execution.DebugConnectionInfo;
-import org.mustbe.consulo.dotnet.module.extension.BaseDotNetModuleExtension;
-import org.mustbe.consulo.mono.dotnet.sdk.MonoSdkType;
+import consulo.dotnet.module.extension.BaseDotNetModuleExtension;
+import consulo.mono.dotnet.sdk.MonoSdkType;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.configurations.RunProfile;

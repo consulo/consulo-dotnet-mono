@@ -1,4 +1,4 @@
-package org.mustbe.consulo.mono.dotnet.module.extension;
+package consulo.mono.dotnet.module.extension;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

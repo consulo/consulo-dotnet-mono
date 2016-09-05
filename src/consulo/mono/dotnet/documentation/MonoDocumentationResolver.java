@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.mustbe.consulo.mono.dotnet.documentation;
+package consulo.mono.dotnet.documentation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -148,11 +148,11 @@ public class MonoDocumentationResolver implements DotNetDocumentationResolver
 		}
 		catch(JDOMException e)
 		{
-			LOGGER.error(e);
+			MonoDocumentationResolver.LOGGER.error(e);
 		}
 		catch(IOException e)
 		{
-			LOGGER.error(e);
+			MonoDocumentationResolver.LOGGER.error(e);
 		}
 		return trees.toArray(new MonodocTree[trees.size()]);
 	}

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.mustbe.consulo.mono.dotnet.module.extension;
+package consulo.mono.dotnet.module.extension;
 
 import javax.swing.JComponent;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mustbe.consulo.dotnet.module.extension.DotNetConfigurationPanel;
+import consulo.dotnet.module.extension.DotNetConfigurationPanel;
 import consulo.dotnet.module.extension.DotNetMutableModuleExtension;
 import com.intellij.openapi.projectRoots.Sdk;
 import consulo.annotations.RequiredDispatchThread;

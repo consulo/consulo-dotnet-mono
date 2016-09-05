@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.mustbe.consulo.mono.dotnet.sdk;
+package consulo.mono.dotnet.sdk;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,8 +27,8 @@ import javax.swing.JComponent;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.mustbe.consulo.dotnet.sdk.DotNetSdkType;
-import org.mustbe.consulo.mono.dotnet.MonoDotNetIcons;
+import consulo.dotnet.sdk.DotNetSdkType;
+import consulo.mono.dotnet.MonoDotNetIcons;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
