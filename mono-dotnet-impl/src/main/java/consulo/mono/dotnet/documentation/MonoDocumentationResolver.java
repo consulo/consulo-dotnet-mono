@@ -148,13 +148,9 @@ public class MonoDocumentationResolver implements DotNetDocumentationResolver
 				trees.add(tree);
 			}
 		}
-		catch(JDOMException e)
+		catch(JDOMException | IOException e)
 		{
-			MonoDocumentationResolver.LOGGER.error(e);
-		}
-		catch(IOException e)
-		{
-			MonoDocumentationResolver.LOGGER.error(e);
+			LOGGER.error(e);
 		}
 		return trees.toArray(new MonodocTree[trees.size()]);
 	}
