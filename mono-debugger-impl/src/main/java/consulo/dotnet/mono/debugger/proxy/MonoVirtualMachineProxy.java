@@ -68,7 +68,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 {
 	private static class TypeRequestInfo
 	{
-		private final EventRequest myEventRequest;
+		private EventRequest myEventRequest;
 
 		private final AtomicInteger myCount = new AtomicInteger(1);
 
@@ -85,7 +85,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	private final MultiMap<XBreakpoint, EventRequest> myBreakpointEventRequests = MultiMap.create();
 
 	private final Map<XBreakpoint<?>, String> myQNameByBreakpoint = new ConcurrentHashMap<>();
-	private final Map<String, TypeRequestInfo> myTypeRequestCount = new ConcurrentHashMap<>();
+	private final Map<String, TypeRequestInfo> myTypeRequests = new ConcurrentHashMap<>();
 
 	private final VirtualMachine myVirtualMachine;
 
@@ -219,7 +219,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 
 		myQNameByBreakpoint.put(breakpoint, qName);
 
-		TypeRequestInfo info = myTypeRequestCount.get(qName);
+		TypeRequestInfo info = myTypeRequests.get(qName);
 		if(info != null)
 		{
 			info.myCount.incrementAndGet();
@@ -229,7 +229,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 			TypeLoadRequest request = eventRequestManager().createTypeLoadRequest();
 			request.addTypeNameFilter(qName);
 
-			myTypeRequestCount.put(qName, new TypeRequestInfo(request));
+			myTypeRequests.put(qName, new TypeRequestInfo(request));
 
 			request.enable();
 		}
@@ -243,7 +243,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 			return;
 		}
 
-		TypeRequestInfo info = myTypeRequestCount.get(qName);
+		TypeRequestInfo info = myTypeRequests.get(qName);
 		if(info == null)
 		{
 			return;
@@ -252,7 +252,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 		int count = info.myCount.decrementAndGet();
 		if(count <= 0)
 		{
-			myTypeRequestCount.remove(qName);
+			myTypeRequests.remove(qName);
 
 			info.myEventRequest.delete();
 		}
@@ -443,6 +443,19 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	public void loadAppDomain(AppDomainMirror appDomainMirror)
 	{
 		myLoadedAppDomains.put(appDomainMirror.id(), appDomainMirror);
+
+		for(Map.Entry<String, TypeRequestInfo> entry : myTypeRequests.entrySet())
+		{
+			String vmQName = entry.getKey();
+			TypeRequestInfo value = entry.getValue();
+
+			value.myEventRequest.delete();
+
+			TypeLoadRequest typeLoadRequest = eventRequestManager().createTypeLoadRequest();
+			typeLoadRequest.addTypeNameFilter(vmQName);
+			typeLoadRequest.enable();
+			value.myEventRequest = typeLoadRequest;
+		}
 	}
 
 	public void unloadAppDomain(AppDomainMirror appDomainMirror)
