@@ -26,8 +26,7 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import consulo.dotnet.util.ArrayUtil2;
-import com.intellij.execution.ui.ConsoleViewContentType;
+
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
@@ -48,10 +47,12 @@ import com.intellij.xdebugger.breakpoints.SuspendPolicy;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import consulo.annotations.RequiredReadAction;
+import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolver;
 import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolverEP;
 import consulo.dotnet.debugger.DotNetDebuggerUtil;
 import consulo.dotnet.debugger.breakpoint.DotNetBreakpointUtil;
+import consulo.dotnet.debugger.breakpoint.DotNetExceptionBreakpointType;
 import consulo.dotnet.debugger.breakpoint.DotNetLineBreakpointType;
 import consulo.dotnet.debugger.breakpoint.properties.DotNetExceptionBreakpointProperties;
 import consulo.dotnet.debugger.breakpoint.properties.DotNetLineBreakpointProperties;
@@ -61,12 +62,12 @@ import consulo.dotnet.mono.debugger.TypeMirrorUnloadedException;
 import consulo.dotnet.mono.debugger.proxy.MonoMethodProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoTypeProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
+import consulo.dotnet.util.ArrayUtil2;
 import mono.debugger.Location;
 import mono.debugger.LocationImpl;
 import mono.debugger.MethodMirror;
 import mono.debugger.TypeMirror;
 import mono.debugger.UnloadedElementException;
-import mono.debugger.VMDisconnectedException;
 import mono.debugger.protocol.Method_GetDebugInfo;
 import mono.debugger.request.BreakpointRequest;
 import mono.debugger.request.EventRequestManager;
@@ -101,6 +102,61 @@ public class MonoBreakpointUtil
 		}
 	}
 
+
+	@Nullable
+	@SuppressWarnings("unchecked")
+	public static String getTypeQNameFromBreakpoint(@Nonnull Project project, @Nonnull XBreakpoint<?> breakpoint)
+	{
+		if(breakpoint instanceof XLineBreakpoint)
+		{
+			return getTypeQNameFromLineBreakpoint(project, (XLineBreakpoint<?>) breakpoint);
+		}
+
+		if(breakpoint.getType() == DotNetExceptionBreakpointType.getInstance())
+		{
+			return getTypeQNameFromExceptionBreakpoint((XBreakpoint<DotNetExceptionBreakpointProperties>) breakpoint);
+		}
+		return null;
+	}
+
+	@Nullable
+	private static String getTypeQNameFromExceptionBreakpoint(@Nonnull XBreakpoint<DotNetExceptionBreakpointProperties> breakpoin)
+	{
+		String vmQName = breakpoin.getProperties().VM_QNAME;
+		if(!StringUtil.isEmpty(vmQName))
+		{
+			return vmQName;
+		}
+		return null;
+	}
+
+	@Nullable
+	private static String getTypeQNameFromLineBreakpoint(@Nonnull Project project, @Nonnull final XLineBreakpoint<?> breakpoint)
+	{
+		final VirtualFile fileByUrl = VirtualFileManager.getInstance().findFileByUrl(breakpoint.getFileUrl());
+		if(fileByUrl == null)
+		{
+			return null;
+		}
+
+		return AccessRule.read(() ->
+		{
+			PsiFile file = PsiManager.getInstance(project).findFile(fileByUrl);
+			if(file == null)
+			{
+				return null;
+			}
+			PsiElement psiElement = DotNetDebuggerUtil.findPsiElement(file, breakpoint.getLine());
+			if(psiElement == null)
+			{
+				return null;
+			}
+			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
+			assert resolver != null;
+			return resolver.resolveParentVmQName(psiElement);
+		});
+	}
+
 	public static void createMethodRequest(final XDebugSession session, @Nonnull MonoVirtualMachineProxy virtualMachine, @Nonnull final XLineBreakpoint<DotNetMethodBreakpointProperties> breakpoint)
 	{
 		/*
@@ -115,7 +171,10 @@ public class MonoBreakpointUtil
 		virtualMachine.putRequest(breakpoint, methodEntryRequest); */
 	}
 
-	public static void createExceptionRequest(@Nonnull MonoVirtualMachineProxy virtualMachine, @Nonnull XBreakpoint<DotNetExceptionBreakpointProperties> breakpoint, @Nullable TypeMirror typeMirror)
+	public static void createExceptionRequest(@Nonnull XDebugSession session,
+											  @Nonnull MonoVirtualMachineProxy virtualMachine,
+											  @Nonnull XBreakpoint<DotNetExceptionBreakpointProperties> breakpoint,
+											  @Nullable TypeMirror typeMirror)
 	{
 		DotNetExceptionBreakpointProperties properties = breakpoint.getProperties();
 
@@ -124,7 +183,7 @@ public class MonoBreakpointUtil
 			return;
 		}
 
-		virtualMachine.stopBreakpointRequests(breakpoint);
+		virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint);
 
 		EventRequestManager eventRequestManager = virtualMachine.getDelegate().eventRequestManager();
 
@@ -133,62 +192,58 @@ public class MonoBreakpointUtil
 		exceptionRequest.setEnabled(breakpoint.isEnabled());
 
 		virtualMachine.putRequest(breakpoint, exceptionRequest);
+
+		virtualMachine.enableTypeRequest(breakpoint, getTypeQNameFromBreakpoint(session.getProject(), breakpoint));
 	}
 
 	public static void createBreakpointRequest(@Nonnull XDebugSession debugSession,
-			@Nonnull MonoVirtualMachineProxy virtualMachine,
-			@Nonnull XLineBreakpoint breakpoint,
-			@Nullable TypeMirror typeMirror)
+											   @Nonnull MonoVirtualMachineProxy virtualMachine,
+											   @Nonnull XLineBreakpoint breakpoint,
+											   @Nullable TypeMirror typeMirror,
+											   boolean insertTypeLoad)
 	{
 		try
 		{
-			createRequestImpl(debugSession.getProject(), virtualMachine, breakpoint, typeMirror);
-		}
-		catch(VMDisconnectedException ignored)
-		{
-		}
-		catch(TypeMirrorUnloadedException e)
-		{
-			debugSession.getConsoleView().print(e.getFullName(), ConsoleViewContentType.ERROR_OUTPUT);
-			debugSession.getConsoleView().print("You can fix this error - restart debug. If you can repeat this error, please report it here 'https://github.com/consulo/consulo-dotnet/issues'",
-					ConsoleViewContentType.ERROR_OUTPUT);
-		}
-	}
+			Project project = debugSession.getProject();
 
-	private static void createRequestImpl(@Nonnull Project project,
-			@Nonnull MonoVirtualMachineProxy virtualMachine,
-			@Nonnull XLineBreakpoint breakpoint,
-			@Nullable TypeMirror typeMirror) throws TypeMirrorUnloadedException
-	{
-		FindLocationResult result = findLocationsImpl(project, virtualMachine, breakpoint, typeMirror);
-		if(result == FindLocationResult.WRONG_TARGET)
-		{
-			return;
-		}
-
-		virtualMachine.stopBreakpointRequests(breakpoint);
-
-		Collection<Location> locations = result.getLocations();
-		if(breakpoint.getSuspendPolicy() != SuspendPolicy.NONE)
-		{
-			for(Location location : locations)
+			FindLocationResult result = findLocationsImpl(project, virtualMachine, breakpoint, typeMirror);
+			if(result == FindLocationResult.WRONG_TARGET)
 			{
-				EventRequestManager eventRequestManager = virtualMachine.eventRequestManager();
-				BreakpointRequest breakpointRequest = eventRequestManager.createBreakpointRequest(location);
-				breakpointRequest.setEnabled(breakpoint.isEnabled());
-
-				virtualMachine.putRequest(breakpoint, breakpointRequest);
+				return;
 			}
-		}
 
-		DotNetBreakpointUtil.updateLineBreakpointIcon(project, !locations.isEmpty(), breakpoint);
+			virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint);
+
+			Collection<Location> locations = result.getLocations();
+			if(breakpoint.getSuspendPolicy() != SuspendPolicy.NONE)
+			{
+				for(Location location : locations)
+				{
+					EventRequestManager eventRequestManager = virtualMachine.eventRequestManager();
+					BreakpointRequest breakpointRequest = eventRequestManager.createBreakpointRequest(location);
+					breakpointRequest.setEnabled(breakpoint.isEnabled());
+
+					virtualMachine.putRequest(breakpoint, breakpointRequest);
+				}
+			}
+
+			if(insertTypeLoad)
+			{
+				virtualMachine.enableTypeRequest(breakpoint, getTypeQNameFromBreakpoint(project, breakpoint));
+			}
+
+			DotNetBreakpointUtil.updateLineBreakpointIcon(project, !locations.isEmpty(), breakpoint);
+		}
+		catch(Exception ignored)
+		{
+		}
 	}
 
 	@Nonnull
 	private static FindLocationResult findLocationsImpl(@Nonnull final Project project,
-			@Nonnull final MonoVirtualMachineProxy virtualMachine,
-			@Nonnull final XLineBreakpoint<?> lineBreakpoint,
-			@Nullable final TypeMirror typeMirror) throws TypeMirrorUnloadedException
+														@Nonnull final MonoVirtualMachineProxy virtualMachine,
+														@Nonnull final XLineBreakpoint<?> lineBreakpoint,
+														@Nullable final TypeMirror typeMirror) throws TypeMirrorUnloadedException
 	{
 		final int line = lineBreakpoint.getLine();
 		final VirtualFile fileByUrl = VirtualFileManager.getInstance().findFileByUrl(lineBreakpoint.getFileUrl());
@@ -198,25 +253,18 @@ public class MonoBreakpointUtil
 
 	@Nonnull
 	public static FindLocationResult findLocationsImpl(@Nonnull final Project project,
-			@Nonnull final MonoVirtualMachineProxy virtualMachine,
-			@Nullable final VirtualFile fileByUrl,
-			final int breakpointLine,
-			@Nullable final Integer executableChildrenAtLineIndex,
-			@Nullable final TypeMirror typeMirror) throws TypeMirrorUnloadedException
+													   @Nonnull final MonoVirtualMachineProxy virtualMachine,
+													   @Nullable final VirtualFile fileByUrl,
+													   final int breakpointLine,
+													   @Nullable final Integer executableChildrenAtLineIndex,
+													   @Nullable final TypeMirror typeMirror) throws TypeMirrorUnloadedException
 	{
 		if(fileByUrl == null)
 		{
 			return FindLocationResult.WRONG_TARGET;
 		}
 
-		final PsiFile file = ApplicationManager.getApplication().runReadAction(new Computable<PsiFile>()
-		{
-			@Override
-			public PsiFile compute()
-			{
-				return PsiManager.getInstance(project).findFile(fileByUrl);
-			}
-		});
+		final PsiFile file = ApplicationManager.getApplication().runReadAction((Computable<PsiFile>) () -> PsiManager.getInstance(project).findFile(fileByUrl));
 
 		if(file == null)
 		{
@@ -225,21 +273,17 @@ public class MonoBreakpointUtil
 
 		final Ref<DotNetDebuggerSourceLineResolver> resolverRef = Ref.create();
 
-		final String vmQualifiedName = ApplicationManager.getApplication().runReadAction(new Computable<String>()
+		final String vmQualifiedName = ApplicationManager.getApplication().runReadAction((Computable<String>) () ->
 		{
-			@Override
-			public String compute()
+			PsiElement psiElement = DotNetDebuggerUtil.findPsiElement(file, breakpointLine);
+			if(psiElement == null)
 			{
-				PsiElement psiElement = DotNetDebuggerUtil.findPsiElement(file, breakpointLine);
-				if(psiElement == null)
-				{
-					return null;
-				}
-				DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
-				assert resolver != null;
-				resolverRef.set(resolver);
-				return resolver.resolveParentVmQName(psiElement);
+				return null;
 			}
+			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
+			assert resolver != null;
+			resolverRef.set(resolver);
+			return resolver.resolveParentVmQName(psiElement);
 		});
 
 		if(vmQualifiedName == null)
@@ -260,7 +304,7 @@ public class MonoBreakpointUtil
 			return FindLocationResult.NO_LOCATIONS;
 		}
 
-		Map<MethodMirror, Location> methods = new LinkedHashMap<MethodMirror, Location>();
+		Map<MethodMirror, Location> methods = new LinkedHashMap<>();
 
 		try
 		{

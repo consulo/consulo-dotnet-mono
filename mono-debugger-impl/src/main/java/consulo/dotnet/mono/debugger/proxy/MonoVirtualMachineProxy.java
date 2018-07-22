@@ -21,19 +21,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.SmartList;
@@ -41,6 +41,7 @@ import com.intellij.util.concurrency.AppExecutorUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
+import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebuggerUtil;
 import consulo.dotnet.debugger.proxy.DotNetThreadProxy;
 import consulo.dotnet.debugger.proxy.DotNetTypeProxy;
@@ -57,6 +58,7 @@ import mono.debugger.*;
 import mono.debugger.request.EventRequest;
 import mono.debugger.request.EventRequestManager;
 import mono.debugger.request.StepRequest;
+import mono.debugger.request.TypeLoadRequest;
 
 /**
  * @author VISTALL
@@ -64,17 +66,33 @@ import mono.debugger.request.StepRequest;
  */
 public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 {
+	private static class TypeRequestInfo
+	{
+		private final EventRequest myEventRequest;
+
+		private final AtomicInteger myCount = new AtomicInteger(1);
+
+		private TypeRequestInfo(EventRequest eventRequest)
+		{
+			myEventRequest = eventRequest;
+		}
+	}
+
 	private static final Logger LOGGER = Logger.getInstance(MonoVirtualMachineProxy.class);
 
 	private final Map<Integer, AppDomainMirror> myLoadedAppDomains = ContainerUtil.newConcurrentMap();
 	private final Set<StepRequest> myStepRequests = ContainerUtil.newLinkedHashSet();
 	private final MultiMap<XBreakpoint, EventRequest> myBreakpointEventRequests = MultiMap.create();
 
+	private final Map<XBreakpoint<?>, String> myQNameByBreakpoint = new ConcurrentHashMap<>();
+	private final Map<String, TypeRequestInfo> myTypeRequestCount = new ConcurrentHashMap<>();
+
 	private final VirtualMachine myVirtualMachine;
 
 	private final boolean mySupportSearchTypesBySourcePaths;
 	private final boolean mySupportSearchTypesByQualifiedName;
 	private final boolean mySupportSystemThreadId;
+	private final boolean mySupportTypeRequestByName;
 
 	private final ExecutorService myExecutor = AppExecutorUtil.createBoundedApplicationPoolExecutor("mono vm invoker", 1);
 
@@ -82,6 +100,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	{
 		myVirtualMachine = virtualMachine;
 		mySupportSearchTypesByQualifiedName = myVirtualMachine.isAtLeastVersion(2, 9);
+		mySupportTypeRequestByName = myVirtualMachine.isAtLeastVersion(2, 9);
 		mySupportSearchTypesBySourcePaths = myVirtualMachine.isAtLeastVersion(2, 7);
 		mySupportSystemThreadId = myVirtualMachine.isAtLeastVersion(2, 2);
 	}
@@ -167,6 +186,11 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 		return mySupportSystemThreadId;
 	}
 
+	public boolean isSupportTypeRequestByName()
+	{
+		return mySupportTypeRequestByName;
+	}
+
 	public void dispose()
 	{
 		myExecutor.shutdown();
@@ -184,6 +208,54 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	{
 		stepRequest.disable();
 		myStepRequests.remove(stepRequest);
+	}
+
+	public void enableTypeRequest(@Nonnull XBreakpoint<?> breakpoint, @Nullable String qName)
+	{
+		if(!mySupportTypeRequestByName || qName == null)
+		{
+			return;
+		}
+
+		myQNameByBreakpoint.put(breakpoint, qName);
+
+		TypeRequestInfo info = myTypeRequestCount.get(qName);
+		if(info != null)
+		{
+			info.myCount.incrementAndGet();
+		}
+		else
+		{
+			TypeLoadRequest request = eventRequestManager().createTypeLoadRequest();
+			request.addTypeNameFilter(qName);
+
+			myTypeRequestCount.put(qName, new TypeRequestInfo(request));
+
+			request.enable();
+		}
+	}
+
+	public void disableTypeRequest(@Nonnull XBreakpoint<?> breakpoint)
+	{
+		String qName = myQNameByBreakpoint.remove(breakpoint);
+		if(qName == null)
+		{
+			return;
+		}
+
+		TypeRequestInfo info = myTypeRequestCount.get(qName);
+		if(info == null)
+		{
+			return;
+		}
+
+		int count = info.myCount.decrementAndGet();
+		if(count <= 0)
+		{
+			myTypeRequestCount.remove(qName);
+
+			info.myEventRequest.delete();
+		}
 	}
 
 	public void putRequest(@Nonnull XBreakpoint<?> breakpoint, @Nonnull EventRequest request)
@@ -204,8 +276,10 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 		return null;
 	}
 
-	public void stopBreakpointRequests(XBreakpoint<?> breakpoint)
+	public void disposeAllRelatedDataForBreakpoint(@Nonnull XBreakpoint<?> breakpoint)
 	{
+		disableTypeRequest(breakpoint);
+
 		Collection<EventRequest> eventRequests = myBreakpointEventRequests.remove(breakpoint);
 		if(eventRequests == null)
 		{
@@ -245,7 +319,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 		return ContainerUtil.getFirstItem(typeMirrors);
 	}
 
-	@Nullable
+	@Nonnull
 	private List<TypeMirror> findTypeMirrors(@Nonnull Project project, @Nonnull final VirtualFile virtualFile, @Nonnull final String vmQualifiedName) throws TypeMirrorUnloadedException
 	{
 		try
@@ -322,7 +396,7 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	@Nonnull
 	private static String getAssemblyTitle(@Nonnull DotNetModuleLangExtension<?> extension)
 	{
-		return ApplicationManager.getApplication().runReadAction((Computable<String>) () ->
+		return AccessRule.read(() ->
 		{
 			String assemblyTitle = extension.getAssemblyTitle();
 			if(assemblyTitle != null)

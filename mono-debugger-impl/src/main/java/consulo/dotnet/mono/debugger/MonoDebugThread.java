@@ -18,11 +18,9 @@ package consulo.dotnet.mono.debugger;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
@@ -30,19 +28,12 @@ import javax.annotation.Nonnull;
 
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.psi.util.PsiUtilBase;
-import com.intellij.util.ArrayUtil;
 import com.intellij.util.EventDispatcher;
 import com.intellij.util.Processor;
 import com.intellij.util.ui.UIUtil;
@@ -54,11 +45,9 @@ import com.intellij.xdebugger.impl.settings.XDebuggerSettingManagerImpl;
 import com.intellij.xdebugger.impl.ui.XDebugSessionTab;
 import com.intellij.xdebugger.impl.ui.XDebuggerUIConstants;
 import consulo.annotations.Exported;
+import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebugContext;
 import consulo.dotnet.debugger.DotNetDebugProcessBase;
-import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolver;
-import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolverEP;
-import consulo.dotnet.debugger.DotNetDebuggerUtil;
 import consulo.dotnet.debugger.DotNetSuspendContext;
 import consulo.dotnet.debugger.breakpoint.DotNetBreakpointEngine;
 import consulo.dotnet.debugger.breakpoint.DotNetBreakpointUtil;
@@ -90,6 +79,8 @@ public class MonoDebugThread extends Thread
 {
 	private static final Logger LOGGER = Logger.getInstance(MonoDebugThread.class);
 
+	private static final ThreadGroup ourThreadGroup = new ThreadGroup("Mono Soft Debugger");
+
 	private final XDebugSession mySession;
 	private final MonoDebugProcess myDebugProcess;
 	private final DebugConnectionInfo myDebugConnectionInfo;
@@ -102,7 +93,7 @@ public class MonoDebugThread extends Thread
 
 	public MonoDebugThread(XDebugSession session, MonoDebugProcess debugProcess, DebugConnectionInfo debugConnectionInfo)
 	{
-		super("MonoDebugThread: " + new Random().nextInt());
+		super(ourThreadGroup, "MonoDebugThread: " + new Random().nextInt());
 		mySession = session;
 		myDebugProcess = debugProcess;
 		myDebugConnectionInfo = debugConnectionInfo;
@@ -120,8 +111,11 @@ public class MonoDebugThread extends Thread
 		myEventDispatcher.removeListener(listener);
 	}
 
-	public void setStop()
+	public void connectionStopped()
 	{
+		myStop = true;
+		myEventDispatcher.getMulticaster().connectionStopped();
+
 		if(myVirtualMachine != null)
 		{
 			try
@@ -133,13 +127,6 @@ public class MonoDebugThread extends Thread
 				//
 			}
 		}
-		connectionStopped();
-	}
-
-	private void connectionStopped()
-	{
-		myStop = true;
-		myEventDispatcher.getMulticaster().connectionStopped();
 		myVirtualMachine = null;
 	}
 
@@ -203,9 +190,10 @@ public class MonoDebugThread extends Thread
 		virtualMachine.enableEvents(/*EventKind.ASSEMBLY_LOAD, EventKind.THREAD_START, EventKind.THREAD_DEATH, EventKind.ASSEMBLY_UNLOAD,*/
 				EventKind.USER_BREAK, EventKind.USER_LOG, EventKind.APPDOMAIN_CREATE, EventKind.APPDOMAIN_UNLOAD);
 
-		Collection<? extends XLineBreakpoint<?>> breakpoints = myDebugProcess.getLineBreakpoints();
 		for(XLineBreakpoint<?> breakpoint : myDebugProcess.getLineBreakpoints())
 		{
+			myVirtualMachine.enableTypeRequest(breakpoint, MonoBreakpointUtil.getTypeQNameFromBreakpoint(mySession.getProject(), breakpoint));
+
 			DotNetBreakpointUtil.updateLineBreakpointIcon(mySession.getProject(), null, breakpoint);
 		}
 
@@ -217,7 +205,7 @@ public class MonoDebugThread extends Thread
 			{
 				continue;
 			}
-			MonoBreakpointUtil.createExceptionRequest(myVirtualMachine, exceptionBreakpoint, null);
+			MonoBreakpointUtil.createExceptionRequest(getSession(), myVirtualMachine, exceptionBreakpoint, null);
 		}
 
 		Collection<? extends XLineBreakpoint<DotNetMethodBreakpointProperties>> methodBreakpoints = myDebugProcess.getMethodBreakpoints();
@@ -226,34 +214,15 @@ public class MonoDebugThread extends Thread
 			MonoBreakpointUtil.createMethodRequest(mySession, myVirtualMachine, lineBreakpoint);
 		}
 
-		TypeLoadRequest typeLoadRequest = virtualMachine.eventRequestManager().createTypeLoadRequest();
-		if(virtualMachine.isAtLeastVersion(2, 9))
+		if(!myVirtualMachine.isSupportTypeRequestByName())
 		{
-			Set<String> types = new LinkedHashSet<String>();
-			for(XLineBreakpoint<?> breakpoint : breakpoints)
-			{
-				collectTypeNames(breakpoint, types);
-			}
-
-			for(XBreakpoint<DotNetExceptionBreakpointProperties> breakpoint : exceptionBreakpoints)
-			{
-				String vmQName = breakpoint.getProperties().VM_QNAME;
-				if(!StringUtil.isEmpty(vmQName))
-				{
-					types.add(vmQName);
-				}
-			}
-
-			if(!types.isEmpty())
-			{
-				typeLoadRequest.addTypeNameFilter(ArrayUtil.toStringArray(types));
-			}
+			TypeLoadRequest typeLoadRequest = virtualMachine.eventRequestManager().createTypeLoadRequest();
+			typeLoadRequest.enable();
 		}
-		typeLoadRequest.enable();
 
 		try
 		{
-			virtualMachine.eventQueue().remove();  //Wait VMStart
+			virtualMachine.eventQueue().remove();  // Wait VMStart
 			try
 			{
 				virtualMachine.resume();
@@ -451,51 +420,6 @@ public class MonoDebugThread extends Thread
 		}
 	}
 
-	private void collectTypeNames(@Nonnull final XLineBreakpoint<?> breakpoint, @Nonnull final Set<String> names)
-	{
-		final Project project = mySession.getProject();
-
-		final VirtualFile fileByUrl = VirtualFileManager.getInstance().findFileByUrl(breakpoint.getFileUrl());
-		if(fileByUrl == null)
-		{
-			return;
-		}
-
-		final PsiFile file = ApplicationManager.getApplication().runReadAction(new Computable<PsiFile>()
-		{
-			@Override
-			public PsiFile compute()
-			{
-				return PsiManager.getInstance(project).findFile(fileByUrl);
-			}
-		});
-
-		if(file == null)
-		{
-			return;
-		}
-
-		ApplicationManager.getApplication().runReadAction(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				PsiElement psiElement = DotNetDebuggerUtil.findPsiElement(file, breakpoint.getLine());
-				if(psiElement == null)
-				{
-					return;
-				}
-				DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
-				assert resolver != null;
-				String name = resolver.resolveParentVmQName(psiElement);
-				if(name != null)
-				{
-					names.add(name);
-				}
-			}
-		});
-	}
-
 	private void insertBreakpoints(final MonoVirtualMachineProxy virtualMachine, final TypeMirror typeMirror)
 	{
 		final DotNetDebugContext debugContext = myDebugProcess.createDebugContext(virtualMachine, null);
@@ -503,17 +427,10 @@ public class MonoDebugThread extends Thread
 		Collection<? extends XBreakpoint<DotNetExceptionBreakpointProperties>> exceptionBreakpoints = myDebugProcess.getExceptionBreakpoints();
 		for(XBreakpoint<DotNetExceptionBreakpointProperties> exceptionBreakpoint : exceptionBreakpoints)
 		{
-			MonoBreakpointUtil.createExceptionRequest(myVirtualMachine, exceptionBreakpoint, typeMirror);
+			MonoBreakpointUtil.createExceptionRequest(getSession(), myVirtualMachine, exceptionBreakpoint, typeMirror);
 		}
 
-		DotNetTypeDeclaration[] typeDeclarations = ApplicationManager.getApplication().runReadAction(new Computable<DotNetTypeDeclaration[]>()
-		{
-			@Override
-			public DotNetTypeDeclaration[] compute()
-			{
-				return MonoDebugUtil.findTypesByQualifiedName(typeMirror, debugContext);
-			}
-		});
+		DotNetTypeDeclaration[] typeDeclarations = AccessRule.read(() -> MonoDebugUtil.findTypesByQualifiedName(typeMirror, debugContext));
 
 		if(typeDeclarations.length > 0)
 		{
@@ -530,7 +447,7 @@ public class MonoDebugThread extends Thread
 						continue;
 					}
 
-					MonoBreakpointUtil.createBreakpointRequest(mySession, virtualMachine, breakpoint, typeMirror);
+					MonoBreakpointUtil.createBreakpointRequest(mySession, virtualMachine, breakpoint, typeMirror, false);
 				}
 			}
 		}

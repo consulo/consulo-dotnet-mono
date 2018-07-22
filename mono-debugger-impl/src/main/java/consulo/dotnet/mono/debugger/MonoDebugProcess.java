@@ -64,11 +64,11 @@ public class MonoDebugProcess extends DotNetDebugProcessBase
 				XBreakpointType<?, ?> type = breakpoint.getType();
 				if(type == DotNetLineBreakpointType.getInstance())
 				{
-					MonoBreakpointUtil.createBreakpointRequest(getSession(), virtualMachine, (XLineBreakpoint) breakpoint, null);
+					MonoBreakpointUtil.createBreakpointRequest(getSession(), virtualMachine, (XLineBreakpoint) breakpoint, null, true);
 				}
 				else if(type == DotNetExceptionBreakpointType.getInstance())
 				{
-					MonoBreakpointUtil.createExceptionRequest(virtualMachine, (XBreakpoint<DotNetExceptionBreakpointProperties>) breakpoint, null);
+					MonoBreakpointUtil.createExceptionRequest(getSession(), virtualMachine, (XBreakpoint<DotNetExceptionBreakpointProperties>) breakpoint, null);
 				}
 			});
 		}
@@ -76,7 +76,7 @@ public class MonoDebugProcess extends DotNetDebugProcessBase
 		@Override
 		public void breakpointRemoved(@Nonnull final XBreakpoint<?> breakpoint)
 		{
-			myDebugThread.invoke(virtualMachine -> virtualMachine.stopBreakpointRequests(breakpoint));
+			myDebugThread.invoke(virtualMachine -> virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint));
 		}
 
 		@Override
@@ -248,7 +248,7 @@ public class MonoDebugProcess extends DotNetDebugProcessBase
 	public void stopImpl()
 	{
 		myPausedEventSet = null;
-		myDebugThread.setStop();
+		myDebugThread.connectionStopped();
 		normalizeBreakpoints();
 		myBreakpointManager.removeBreakpointListener(myBreakpointListener);
 	}
