@@ -76,7 +76,7 @@ public class MonoDebugProcess extends DotNetDebugProcessBase
 		@Override
 		public void breakpointRemoved(@Nonnull final XBreakpoint<?> breakpoint)
 		{
-			myDebugThread.invoke(virtualMachine -> virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint));
+			myDebugThread.invoke(virtualMachine -> virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint, true));
 		}
 
 		@Override

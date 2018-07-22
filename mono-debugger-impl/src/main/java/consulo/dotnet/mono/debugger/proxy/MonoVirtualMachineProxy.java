@@ -276,9 +276,13 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 		return null;
 	}
 
-	public void disposeAllRelatedDataForBreakpoint(@Nonnull XBreakpoint<?> breakpoint)
+	public void disposeAllRelatedDataForBreakpoint(@Nonnull XBreakpoint<?> breakpoint, boolean removeTypeRequest)
 	{
-		disableTypeRequest(breakpoint);
+		// remove type request on breakpoint remove
+		if(removeTypeRequest)
+		{
+			disableTypeRequest(breakpoint);
+		}
 
 		Collection<EventRequest> eventRequests = myBreakpointEventRequests.remove(breakpoint);
 		if(eventRequests == null)
@@ -443,19 +447,6 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 	public void loadAppDomain(AppDomainMirror appDomainMirror)
 	{
 		myLoadedAppDomains.put(appDomainMirror.id(), appDomainMirror);
-
-		for(Map.Entry<String, TypeRequestInfo> entry : myTypeRequests.entrySet())
-		{
-			String vmQName = entry.getKey();
-			TypeRequestInfo value = entry.getValue();
-
-			value.myEventRequest.delete();
-
-			TypeLoadRequest typeLoadRequest = eventRequestManager().createTypeLoadRequest();
-			typeLoadRequest.addTypeNameFilter(vmQName);
-			typeLoadRequest.enable();
-			value.myEventRequest = typeLoadRequest;
-		}
 	}
 
 	public void unloadAppDomain(AppDomainMirror appDomainMirror)

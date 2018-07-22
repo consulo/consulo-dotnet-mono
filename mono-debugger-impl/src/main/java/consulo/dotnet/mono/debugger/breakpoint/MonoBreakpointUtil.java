@@ -183,7 +183,7 @@ public class MonoBreakpointUtil
 			return;
 		}
 
-		virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint);
+		virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint, true);
 
 		EventRequestManager eventRequestManager = virtualMachine.getDelegate().eventRequestManager();
 
@@ -212,7 +212,7 @@ public class MonoBreakpointUtil
 				return;
 			}
 
-			virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint);
+			virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint, insertTypeLoad);
 
 			Collection<Location> locations = result.getLocations();
 			if(breakpoint.getSuspendPolicy() != SuspendPolicy.NONE)
