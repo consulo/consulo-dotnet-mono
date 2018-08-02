@@ -61,6 +61,8 @@ public class MonoSdkType extends DotNetSdkType
 	public static final String ourDefaultLinuxCompilerPath = "/usr/bin/mcs";
 	public static final String ourDefaultFreeBSDCompilerPath = "/usr/local/bin/mcs";
 
+	private static final String apiVer = "-api";
+
 	private static final String[] ourMonoPaths = new String[]{
 			"C:/Program Files/Mono/",
 			"C:/Program Files (x86)/Mono/"
@@ -118,7 +120,7 @@ public class MonoSdkType extends DotNetSdkType
 		{
 			return Collections.emptyList();
 		}
-		List<String> list = new ArrayList<String>(1);
+		List<String> list = new ArrayList<>(1);
 		for(File file : dir.listFiles())
 		{
 			list.add(file.getPath());
@@ -181,9 +183,14 @@ public class MonoSdkType extends DotNetSdkType
 
 	@Nullable
 	@Override
-	public String getVersionString(String s)
+	public String getVersionString(String path)
 	{
-		return new File(s).getName();
+		String directoryName = new File(path).getName();
+		if(directoryName.endsWith(apiVer))
+		{
+			return directoryName.substring(0, directoryName.length() - apiVer.length());
+		}
+		return directoryName;
 	}
 
 	@Override
@@ -272,7 +279,7 @@ public class MonoSdkType extends DotNetSdkType
 			{
 				if(isValidSdkHome(file.getAbsolutePath()))
 				{
-					list.add(new Pair<String, File>(file.getName(), file));
+					list.add(Pair.create(file.getName(), file));
 				}
 			}
 		}
