@@ -36,9 +36,9 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModel;
+import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.openapi.projectRoots.SdkTable;
 import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil;
-import com.intellij.openapi.projectRoots.impl.SdkImpl;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.ui.popup.JBPopupFactory;
 import com.intellij.openapi.ui.popup.ListPopup;
@@ -297,9 +297,11 @@ public class MonoSdkType extends DotNetSdkType
 					String absolutePath = path.getAbsolutePath();
 
 					String uniqueSdkName = SdkConfigurationUtil.createUniqueSdkName(MonoSdkType.this, absolutePath, SdkTable.getInstance().getAllSdks());
-					SdkImpl sdk = new SdkImpl(uniqueSdkName, MonoSdkType.this);
-					sdk.setVersionString(getVersionString(absolutePath));
-					sdk.setHomePath(absolutePath);
+					Sdk sdk = SdkTable.getInstance().createSdk(uniqueSdkName, MonoSdkType.this);
+					SdkModificator modificator = sdk.getSdkModificator();
+					modificator.setVersionString(getVersionString(absolutePath));
+					modificator.setHomePath(absolutePath);
+					modificator.commitChanges();
 
 					sdkCreatedCallback.consume(sdk);
 				}
