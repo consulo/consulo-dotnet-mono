@@ -16,20 +16,6 @@
 
 package consulo.mono.dotnet.documentation;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.emonic.base.documentation.IDocumentation;
-import org.emonic.base.documentation.ITypeDocumentation;
-import org.emonic.monodoc.MonodocTree;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.JDOMUtil;
@@ -37,11 +23,24 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.util.containers.ContainerUtil;
-import consulo.annotations.RequiredReadAction;
+import consulo.annotation.access.RequiredReadAction;
 import consulo.dotnet.documentation.DotNetDocumentationResolver;
 import consulo.dotnet.psi.DotNetMethodDeclaration;
 import consulo.dotnet.psi.DotNetQualifiedElement;
 import consulo.dotnet.psi.DotNetTypeDeclaration;
+import org.emonic.base.documentation.IDocumentation;
+import org.emonic.base.documentation.ITypeDocumentation;
+import org.emonic.monodoc.MonodocTree;
+import org.jdom.Document;
+import org.jdom.Element;
+import org.jdom.JDOMException;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author VISTALL

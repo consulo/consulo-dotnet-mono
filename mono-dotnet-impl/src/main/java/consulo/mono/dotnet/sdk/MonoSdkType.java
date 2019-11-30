@@ -16,16 +16,6 @@
 
 package consulo.mono.dotnet.sdk;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.JComponent;
-
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -47,10 +37,19 @@ import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
-import consulo.annotations.RequiredDispatchThread;
 import consulo.dotnet.sdk.DotNetSdkType;
 import consulo.mono.dotnet.MonoDotNetIcons;
+import consulo.ui.annotation.RequiredUIAccess;
 import consulo.ui.image.Image;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author VISTALL
@@ -289,7 +288,7 @@ public class MonoSdkType extends DotNetSdkType
 		{
 			actionGroup.add(new AnAction(pair.getFirst())
 			{
-				@RequiredDispatchThread
+				@RequiredUIAccess
 				@Override
 				public void actionPerformed(@Nonnull AnActionEvent anActionEvent)
 				{

@@ -16,16 +16,6 @@
 
 package consulo.dotnet.mono.debugger;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
-
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.diagnostic.Logger;
@@ -44,7 +34,7 @@ import com.intellij.xdebugger.impl.XDebugSessionImpl;
 import com.intellij.xdebugger.impl.settings.XDebuggerSettingManagerImpl;
 import com.intellij.xdebugger.impl.ui.XDebugSessionTab;
 import com.intellij.xdebugger.impl.ui.XDebuggerUIConstants;
-import consulo.annotations.Exported;
+import consulo.annotation.UsedInPlugin;
 import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebugContext;
 import consulo.dotnet.debugger.DotNetDebugProcessBase;
@@ -59,17 +49,19 @@ import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
 import consulo.dotnet.mono.debugger.proxy.MonoThreadProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.psi.DotNetTypeDeclaration;
-import mono.debugger.AppDomainMirror;
-import mono.debugger.EventKind;
-import mono.debugger.NotSuspendedException;
-import mono.debugger.SocketAttachingConnector;
-import mono.debugger.SocketListeningConnector;
-import mono.debugger.TypeMirror;
-import mono.debugger.VMDisconnectedException;
-import mono.debugger.VirtualMachine;
+import mono.debugger.*;
 import mono.debugger.connect.Connector;
 import mono.debugger.event.*;
 import mono.debugger.request.TypeLoadRequest;
+
+import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
 
 /**
  * @author VISTALL
@@ -99,13 +91,13 @@ public class MonoDebugThread extends Thread
 		myDebugConnectionInfo = debugConnectionInfo;
 	}
 
-	@Exported
+	@UsedInPlugin
 	public void addListener(MonoVirtualMachineListener listener)
 	{
 		myEventDispatcher.addListener(listener);
 	}
 
-	@Exported
+	@UsedInPlugin
 	public void removeListener(MonoVirtualMachineListener listener)
 	{
 		myEventDispatcher.removeListener(listener);

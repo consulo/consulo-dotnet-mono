@@ -16,17 +16,17 @@
 
 package consulo.mono.dotnet.module.extension;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.JComponent;
-
+import com.intellij.openapi.projectRoots.Sdk;
 import consulo.dotnet.module.extension.DotNetConfigurationPanel;
 import consulo.dotnet.module.extension.DotNetMutableModuleExtension;
-import com.intellij.openapi.projectRoots.Sdk;
-import consulo.annotations.RequiredDispatchThread;
 import consulo.dotnet.module.extension.DotNetQualifiedElementQualifierProducer;
 import consulo.module.extension.MutableModuleInheritableNamedPointer;
 import consulo.roots.ModuleRootLayer;
+import consulo.ui.annotation.RequiredUIAccess;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
 
 /**
  * @author VISTALL
@@ -48,7 +48,7 @@ public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension 
 
 	@Nullable
 	@Override
-	@RequiredDispatchThread
+	@RequiredUIAccess
 	public JComponent createConfigurablePanel(@Nonnull Runnable runnable)
 	{
 		return new DotNetConfigurationPanel(this, DotNetQualifiedElementQualifierProducer.INSTANCE, myVariables, runnable);

@@ -16,17 +16,6 @@
 
 package consulo.dotnet.mono.debugger.breakpoint;
 
-import gnu.trove.TIntHashSet;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
@@ -46,7 +35,7 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.breakpoints.SuspendPolicy;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
-import consulo.annotations.RequiredReadAction;
+import consulo.annotation.access.RequiredReadAction;
 import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolver;
 import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolverEP;
@@ -63,15 +52,16 @@ import consulo.dotnet.mono.debugger.proxy.MonoMethodProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoTypeProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.util.ArrayUtil2;
-import mono.debugger.Location;
-import mono.debugger.LocationImpl;
-import mono.debugger.MethodMirror;
-import mono.debugger.TypeMirror;
-import mono.debugger.UnloadedElementException;
+import gnu.trove.TIntHashSet;
+import mono.debugger.*;
 import mono.debugger.protocol.Method_GetDebugInfo;
 import mono.debugger.request.BreakpointRequest;
 import mono.debugger.request.EventRequestManager;
 import mono.debugger.request.ExceptionRequest;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * @author VISTALL
