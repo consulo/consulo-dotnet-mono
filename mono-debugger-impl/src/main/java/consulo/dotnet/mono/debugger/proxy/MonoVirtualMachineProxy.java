@@ -126,6 +126,20 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 
 	@Nullable
 	@Override
+	public DotNetTypeProxy findTypeInCorlib(@Nonnull String vmQName)
+	{
+		AssemblyMirror assemblyMirror = myVirtualMachine.rootAppDomain().corlibAssembly();
+
+		TypeMirror typeMirror = assemblyMirror.findTypeByQualifiedName(vmQName, false);
+		if(typeMirror == null)
+		{
+			return null;
+		}
+		return MonoTypeProxy.of(typeMirror);
+	}
+
+	@Nullable
+	@Override
 	public DotNetTypeProxy findType(@Nonnull Project project, @Nonnull String vmQName, @Nonnull VirtualFile virtualFile)
 	{
 		try
