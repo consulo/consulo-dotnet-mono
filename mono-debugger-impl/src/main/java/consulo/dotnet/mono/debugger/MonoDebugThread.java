@@ -16,6 +16,17 @@
 
 package consulo.dotnet.mono.debugger;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.diagnostic.Logger;
@@ -49,19 +60,18 @@ import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
 import consulo.dotnet.mono.debugger.proxy.MonoThreadProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.psi.DotNetTypeDeclaration;
-import mono.debugger.*;
+import mono.debugger.AppDomainMirror;
+import mono.debugger.EventKind;
+import mono.debugger.NotSuspendedException;
+import mono.debugger.SocketAttachingConnector;
+import mono.debugger.SocketListeningConnector;
+import mono.debugger.TypeMirror;
+import mono.debugger.VMDisconnectedException;
+import mono.debugger.VirtualMachine;
 import mono.debugger.connect.Connector;
 import mono.debugger.event.*;
+import mono.debugger.request.EventRequest;
 import mono.debugger.request.TypeLoadRequest;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 
 /**
  * @author VISTALL
@@ -250,7 +260,8 @@ public class MonoDebugThread extends Thread
 						{
 							stopped = true;
 
-							XBreakpoint<?> breakpoint = myVirtualMachine.findBreakpointByRequest(event.request());
+							EventRequest request = event.request();
+							XBreakpoint<?> breakpoint = request == null ? null : myVirtualMachine.findBreakpointByRequest(request);
 							DotNetDebugContext debugContext = myDebugProcess.createDebugContext(myVirtualMachine, breakpoint);
 							if(breakpoint != null)
 							{
@@ -271,10 +282,13 @@ public class MonoDebugThread extends Thread
 							}
 							else
 							{
-								final Object property = event.request().getProperty(DotNetDebugProcessBase.RUN_TO_CURSOR);
-								if(property != null)
+								if(request != null)
 								{
-									event.request().delete();
+									final Object property = request.getProperty(DotNetDebugProcessBase.RUN_TO_CURSOR);
+									if(property != null)
+									{
+										request.delete();
+									}
 								}
 
 								mySession.positionReached(new DotNetSuspendContext(debugContext, MonoThreadProxy.getIdFromThread(myVirtualMachine, eventSet.eventThread())));
