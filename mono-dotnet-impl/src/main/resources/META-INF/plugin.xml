@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<idea-plugin>
+<consulo-plugin>
 	<id>consulo.dotnet.mono</id>
 	<name>Mono .NET</name>
 	<version>SNAPSHOT</version>
@@ -35,4 +35,4 @@
 
 		<sdkType implementation="consulo.mono.dotnet.sdk.MonoSdkType"/>
 	</extensions>
-</idea-plugin>
+</consulo-plugin>

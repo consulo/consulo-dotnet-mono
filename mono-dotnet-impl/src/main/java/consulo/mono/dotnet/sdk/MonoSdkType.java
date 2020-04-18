@@ -16,11 +16,21 @@
 
 package consulo.mono.dotnet.sdk;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
@@ -41,15 +51,6 @@ import consulo.dotnet.sdk.DotNetSdkType;
 import consulo.mono.dotnet.MonoDotNetIcons;
 import consulo.ui.annotation.RequiredUIAccess;
 import consulo.ui.image.Image;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.*;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * @author VISTALL
@@ -97,7 +98,7 @@ public class MonoSdkType extends DotNetSdkType
 	@Nonnull
 	public static MonoSdkType getInstance()
 	{
-		return EP_NAME.findExtension(MonoSdkType.class);
+		return EP_NAME.findExtensionOrFail(MonoSdkType.class);
 	}
 
 	public MonoSdkType()
@@ -283,10 +284,10 @@ public class MonoSdkType extends DotNetSdkType
 			}
 		}
 
-		DefaultActionGroup actionGroup = new DefaultActionGroup();
+		ActionGroup.Builder b = ActionGroup.newImmutableBuilder();
 		for(final Pair<String, File> pair : list)
 		{
-			actionGroup.add(new AnAction(pair.getFirst())
+			b.add(new AnAction(pair.getFirst())
 			{
 				@RequiredUIAccess
 				@Override
@@ -309,7 +310,7 @@ public class MonoSdkType extends DotNetSdkType
 
 		DataContext dataContext = DataManager.getInstance().getDataContext(parentComponent);
 
-		ListPopup choose = JBPopupFactory.getInstance().createActionGroupPopup("Choose", actionGroup, dataContext, JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, false);
+		ListPopup choose = JBPopupFactory.getInstance().createActionGroupPopup("Choose", b.build(), dataContext, JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, false);
 
 		choose.showInCenterOf(parentComponent);
 	}
