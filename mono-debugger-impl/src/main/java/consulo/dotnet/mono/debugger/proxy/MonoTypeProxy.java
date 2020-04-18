@@ -19,10 +19,9 @@ package consulo.dotnet.mono.debugger.proxy;
 import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.Contract;
-
-import javax.annotation.Nullable;
 import consulo.dotnet.debugger.proxy.DotNetFieldProxy;
 import consulo.dotnet.debugger.proxy.DotNetMethodProxy;
 import consulo.dotnet.debugger.proxy.DotNetPropertyProxy;

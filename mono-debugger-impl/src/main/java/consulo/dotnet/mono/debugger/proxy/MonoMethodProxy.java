@@ -16,16 +16,23 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import consulo.annotation.access.RequiredReadAction;
-import consulo.dotnet.debugger.proxy.*;
+import consulo.dotnet.debugger.proxy.DotNetLocalVariableProxy;
+import consulo.dotnet.debugger.proxy.DotNetMethodInvokeResult;
+import consulo.dotnet.debugger.proxy.DotNetMethodParameterProxy;
+import consulo.dotnet.debugger.proxy.DotNetMethodProxy;
+import consulo.dotnet.debugger.proxy.DotNetNotSuspendedException;
+import consulo.dotnet.debugger.proxy.DotNetStackFrameProxy;
+import consulo.dotnet.debugger.proxy.DotNetThrowValueException;
+import consulo.dotnet.debugger.proxy.DotNetTypeProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;
 import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
 import mono.debugger.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * @author VISTALL
@@ -110,6 +117,15 @@ public class MonoMethodProxy implements DotNetMethodProxy
 			@Nullable DotNetValueProxy thisObjectProxy,
 			@Nonnull DotNetValueProxy... arguments) throws DotNetThrowValueException, DotNetNotSuspendedException
 	{
+		return invokeAdvanced(frameProxy, thisObjectProxy, arguments).getResult();
+	}
+
+	@Nonnull
+	@Override
+	public DotNetMethodInvokeResult invokeAdvanced(@Nonnull DotNetStackFrameProxy frameProxy,
+												   @Nullable DotNetValueProxy thisObjectProxy,
+												   @Nonnull DotNetValueProxy... arguments) throws DotNetThrowValueException, DotNetNotSuspendedException
+	{
 		ThreadMirror thread = ((MonoThreadProxy) frameProxy.getThread()).getThreadMirror();
 		Value<?> thisObject = thisObjectProxy == null ? null : ((MonoValueProxyBase) thisObjectProxy).getMirror();
 
@@ -121,11 +137,8 @@ public class MonoMethodProxy implements DotNetMethodProxy
 		}
 		try
 		{
-			return MonoValueProxyUtil.wrap(myMethodMirror.invoke(thread, InvokeFlags.DISABLE_BREAKPOINTS, thisObject, values));
-		}
-		catch(IllegalArgumentException e)
-		{
-			return null;
+			InvokeResult result = myMethodMirror.invokeNew(thread, InvokeFlags.DISABLE_BREAKPOINTS, thisObject, values);
+			return new DotNetMethodInvokeResult(MonoValueProxyUtil.wrap(result.getValue()), MonoValueProxyUtil.wrap(result.getOutThis()));
 		}
 		catch(NotSuspendedException e)
 		{
