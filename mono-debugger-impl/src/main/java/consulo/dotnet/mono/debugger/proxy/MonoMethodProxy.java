@@ -137,7 +137,7 @@ public class MonoMethodProxy implements DotNetMethodProxy
 		}
 		try
 		{
-			InvokeResult result = myMethodMirror.invokeNew(thread, InvokeFlags.DISABLE_BREAKPOINTS, thisObject, values);
+			InvokeResult result = myMethodMirror.invokeNew(thread, InvokeFlags.pack(InvokeFlags.DISABLE_BREAKPOINTS, InvokeFlags.OUT_THIS), thisObject, values);
 			return new DotNetMethodInvokeResult(MonoValueProxyUtil.wrap(result.getValue()), MonoValueProxyUtil.wrap(result.getOutThis()));
 		}
 		catch(NotSuspendedException e)
