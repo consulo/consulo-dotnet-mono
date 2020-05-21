@@ -27,12 +27,9 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.Couple;
-import com.intellij.openapi.util.Ref;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -63,6 +60,7 @@ import consulo.dotnet.mono.debugger.proxy.MonoMethodProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoTypeProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.util.ArrayUtil2;
+import consulo.util.lang.ref.SimpleReference;
 import mono.debugger.Location;
 import mono.debugger.LocationImpl;
 import mono.debugger.MethodMirror;
@@ -254,26 +252,26 @@ public class MonoBreakpointUtil
 	@Nonnull
 	public static FindLocationResult findLocationsImpl(@Nonnull final Project project,
 													   @Nonnull final MonoVirtualMachineProxy virtualMachine,
-													   @Nullable final VirtualFile fileByUrl,
+													   @Nullable final VirtualFile targetVFile,
 													   final int breakpointLine,
 													   @Nullable final Integer executableChildrenAtLineIndex,
 													   @Nullable final TypeMirror typeMirror) throws TypeMirrorUnloadedException
 	{
-		if(fileByUrl == null)
+		if(targetVFile == null)
 		{
 			return FindLocationResult.WRONG_TARGET;
 		}
 
-		final PsiFile file = ApplicationManager.getApplication().runReadAction((Computable<PsiFile>) () -> PsiManager.getInstance(project).findFile(fileByUrl));
+		final PsiFile file = AccessRule.read(() -> PsiManager.getInstance(project).findFile(targetVFile));
 
 		if(file == null)
 		{
 			return FindLocationResult.WRONG_TARGET;
 		}
 
-		final Ref<DotNetDebuggerSourceLineResolver> resolverRef = Ref.create();
+		final SimpleReference<DotNetDebuggerSourceLineResolver> resolverRef = SimpleReference.create();
 
-		final String vmQualifiedName = ApplicationManager.getApplication().runReadAction((Computable<String>) () ->
+		final String vmQualifiedName = AccessRule.read(() ->
 		{
 			PsiElement psiElement = DotNetDebuggerUtil.findPsiElement(file, breakpointLine);
 			if(psiElement == null)
@@ -296,7 +294,7 @@ public class MonoBreakpointUtil
 			return FindLocationResult.WRONG_TARGET;
 		}
 
-		TypeMirror mirror = typeMirror == null ? virtualMachine.findTypeMirror(project, fileByUrl, vmQualifiedName) : typeMirror;
+		TypeMirror mirror = typeMirror == null ? virtualMachine.findTypeMirror(project, targetVFile, vmQualifiedName) : typeMirror;
 
 		if(mirror == null)
 
@@ -337,14 +335,7 @@ public class MonoBreakpointUtil
 							continue;
 						}
 
-						boolean acceptable = ApplicationManager.getApplication().runReadAction(new Computable<Boolean>()
-						{
-							@Override
-							public Boolean compute()
-							{
-								return findExecutableElementFromDebugInfo(project, entries, executableChildrenAtLineIndex) != null;
-							}
-						});
+						boolean acceptable = AccessRule.read(() -> findExecutableElementFromDebugInfo(project, entries, executableChildrenAtLineIndex) != null);
 
 						if(!acceptable)
 						{
@@ -353,7 +344,7 @@ public class MonoBreakpointUtil
 					}
 				}
 
-				collectLocations(virtualMachine, breakpointLine, methods, methodMirror);
+				collectLocations(virtualMachine, breakpointLine, methods, methodMirror, targetVFile);
 			}
 
 			TypeMirror[] nestedTypeMirrors = mirror.nestedTypes();
@@ -366,7 +357,7 @@ public class MonoBreakpointUtil
 					MethodMirror moveNext = nestedTypeMirror.findMethodByName("MoveNext", false);
 					if(moveNext != null)
 					{
-						collectLocations(virtualMachine, breakpointLine, methods, moveNext);
+						collectLocations(virtualMachine, breakpointLine, methods, moveNext, targetVFile);
 					}
 				}
 				else if(DotNetDebuggerCompilerGenerateUtil.isAsyncLambdaWrapper(typeProxy))
@@ -378,13 +369,13 @@ public class MonoBreakpointUtil
 
 						if(moveNext != null)
 						{
-							collectLocations(virtualMachine, breakpointLine, methods, moveNext);
+							collectLocations(virtualMachine, breakpointLine, methods, moveNext, targetVFile);
 						}
 					}
 
 					for(MethodMirror nestedMetohdMirror : nestedTypeMirror.methods())
 					{
-						collectLocations(virtualMachine, breakpointLine, methods, nestedMetohdMirror);
+						collectLocations(virtualMachine, breakpointLine, methods, nestedMetohdMirror, targetVFile);
 					}
 				}
 			}
@@ -442,7 +433,7 @@ public class MonoBreakpointUtil
 		return PsiTreeUtil.isAncestor(executableTarget, psiElement, true) ? executableTarget : null;
 	}
 
-	private static void collectLocations(MonoVirtualMachineProxy virtualMachine, int breakpointLine, Map<MethodMirror, Location> methods, MethodMirror methodMirror)
+	private static void collectLocations(MonoVirtualMachineProxy virtualMachine, int breakpointLine, Map<MethodMirror, Location> methods, MethodMirror methodMirror, VirtualFile targetVFile)
 	{
 		TIntHashSet registeredLines = new TIntHashSet();
 		for(Method_GetDebugInfo.Entry entry : methodMirror.debugInfo())
@@ -453,6 +444,17 @@ public class MonoBreakpointUtil
 				{
 					continue;
 				}
+
+				Method_GetDebugInfo.SourceFile sourceFile = entry.sourceFile;
+				if(sourceFile != null && sourceFile.name != null)
+				{
+					VirtualFile sourceVFile = LocalFileSystem.getInstance().findFileByPath(sourceFile.name);
+					if(sourceVFile != null && !sourceVFile.equals(targetVFile))
+					{
+						continue;
+					}
+				}
+
 				methods.put(methodMirror, new LocationImpl(virtualMachine.getDelegate(), methodMirror, entry.offset));
 			}
 		}
