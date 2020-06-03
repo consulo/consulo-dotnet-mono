@@ -16,23 +16,28 @@
 
 package consulo.mono.dotnet.module.extension;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+
 import com.intellij.openapi.projectRoots.Sdk;
+import consulo.disposer.Disposable;
 import consulo.dotnet.module.extension.DotNetConfigurationPanel;
 import consulo.dotnet.module.extension.DotNetMutableModuleExtension;
 import consulo.dotnet.module.extension.DotNetQualifiedElementQualifierProducer;
 import consulo.module.extension.MutableModuleInheritableNamedPointer;
+import consulo.module.extension.swing.SwingMutableModuleExtension;
 import consulo.roots.ModuleRootLayer;
+import consulo.ui.Component;
+import consulo.ui.Label;
 import consulo.ui.annotation.RequiredUIAccess;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.*;
+import consulo.ui.layout.VerticalLayout;
 
 /**
  * @author VISTALL
  * @since 20.11.13.
  */
-public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension implements DotNetMutableModuleExtension<MonoDotNetModuleExtension>
+public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension implements DotNetMutableModuleExtension<MonoDotNetModuleExtension>, SwingMutableModuleExtension
 {
 	public MonoDotNetMutableModuleExtension(@Nonnull String id, @Nonnull ModuleRootLayer rootModel)
 	{
@@ -46,10 +51,18 @@ public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension 
 		return (MutableModuleInheritableNamedPointer<Sdk>) super.getInheritableSdk();
 	}
 
+	@RequiredUIAccess
 	@Nullable
 	@Override
+	public Component createConfigurationComponent(@Nonnull Disposable disposable, @Nonnull Runnable runnable)
+	{
+		return VerticalLayout.create().add(Label.create("Unsupported platform"));
+	}
+
 	@RequiredUIAccess
-	public JComponent createConfigurablePanel(@Nonnull Runnable runnable)
+	@Nullable
+	@Override
+	public JComponent createConfigurablePanel(@Nonnull Disposable disposable, @Nonnull Runnable runnable)
 	{
 		return new DotNetConfigurationPanel(this, DotNetQualifiedElementQualifierProducer.INSTANCE, myVariables, runnable);
 	}
