@@ -16,16 +16,6 @@
 
 package consulo.mono.dotnet.sdk;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.*;
-
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -47,10 +37,19 @@ import com.intellij.openapi.util.SystemInfo;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Consumer;
+import consulo.dotnet.mono.icon.MonoDotNetIconGroup;
 import consulo.dotnet.sdk.DotNetSdkType;
-import consulo.mono.dotnet.MonoDotNetIcons;
 import consulo.ui.annotation.RequiredUIAccess;
 import consulo.ui.image.Image;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author VISTALL
@@ -211,7 +210,7 @@ public class MonoSdkType extends DotNetSdkType
 	@Override
 	public Image getIcon()
 	{
-		return MonoDotNetIcons.Mono;
+		return MonoDotNetIconGroup.mono();
 	}
 
 	@Override

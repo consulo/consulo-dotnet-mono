@@ -29,7 +29,7 @@
 
 		<moduleExtensionProvider key="mono-dotnet"
 								 name="Mono"
-								 icon="/icons/mono.png"
+								 icon="consulo.dotnet.mono.MonoDotNetIconGroup@mono"
 								 immutableClass="consulo.mono.dotnet.module.extension.MonoDotNetModuleExtension"
 								 mutableClass="consulo.mono.dotnet.module.extension.MonoDotNetMutableModuleExtension"/>
 
