@@ -16,9 +16,10 @@
 
 <consulo-plugin>
 	<id>consulo.dotnet.mono</id>
-	<name>Mono .NET</name>
+	<name>Mono (.NET Framework-compatible frameworj)</name>
 	<version>SNAPSHOT</version>
 	<depends>consulo.dotnet</depends>
+	<category>Software Framework</category>
 
 	<extensions defaultExtensionNs="consulo.dotnet">
 		<documentationResolver implementation="consulo.mono.dotnet.documentation.MonoDocumentationResolver" />
