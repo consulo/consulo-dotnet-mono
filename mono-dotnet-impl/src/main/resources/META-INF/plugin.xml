@@ -16,7 +16,7 @@
 
 <consulo-plugin>
 	<id>consulo.dotnet.mono</id>
-	<name>Mono (.NET Framework-compatible frameworj)</name>
+	<name>Mono (.NET Framework-compatible framework)</name>
 	<version>SNAPSHOT</version>
 	<depends>consulo.dotnet</depends>
 	<category>Software Framework</category>
