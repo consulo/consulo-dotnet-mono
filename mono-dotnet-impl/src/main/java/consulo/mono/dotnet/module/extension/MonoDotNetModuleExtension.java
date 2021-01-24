@@ -16,15 +16,6 @@
 
 package consulo.mono.dotnet.module.extension;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import consulo.dotnet.compiler.DotNetMacroUtil;
-import consulo.dotnet.execution.DebugConnectionInfo;
-import consulo.dotnet.module.extension.BaseDotNetModuleExtension;
-import consulo.mono.dotnet.sdk.MonoSdkType;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.configurations.GeneralCommandLine;
 import com.intellij.execution.configurations.RunProfile;
@@ -33,14 +24,24 @@ import com.intellij.openapi.projectRoots.SdkType;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.xdebugger.XDebugSession;
+import consulo.dotnet.compiler.DotNetMacroUtil;
 import consulo.dotnet.debugger.DotNetDebugProcessBase;
 import consulo.dotnet.debugger.DotNetModuleExtensionWithDebug;
+import consulo.dotnet.execution.DebugConnectionInfo;
+import consulo.dotnet.module.extension.BaseDotNetModuleExtension;
 import consulo.dotnet.mono.debugger.MonoDebugProcess;
+import consulo.mono.dotnet.sdk.MonoSdkType;
 import consulo.roots.ModuleRootLayer;
 import consulo.roots.types.DocumentationOrderRootType;
+import consulo.util.collection.ArrayUtil;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author VISTALL
@@ -120,7 +121,7 @@ public class MonoDotNetModuleExtension extends BaseDotNetModuleExtension<MonoDot
 				return systemLibraryUrls;
 			}
 
-			List<String> list = new ArrayList<String>();
+			List<String> list = new ArrayList<>();
 			ContainerUtil.addAll(list, systemLibraryUrls);
 
 			for(VirtualFile virtualFile : docDir.getChildren())
@@ -133,6 +134,25 @@ public class MonoDotNetModuleExtension extends BaseDotNetModuleExtension<MonoDot
 			return ArrayUtil.toStringArray(list);
 		}
 		return super.getSystemLibraryUrlsImpl(sdk, name, orderRootType);
+	}
+
+	@Nonnull
+	@Override
+	public File[] getFilesForLibraries()
+	{
+		File[] filesForLibraries = super.getFilesForLibraries();
+
+		Sdk sdk = getSdk();
+		if(sdk != null)
+		{
+			File facadesDir = new File(sdk.getHomePath(), "Facades");
+			if(facadesDir.exists())
+			{
+				File[] files = facadesDir.listFiles();
+				filesForLibraries = ArrayUtil.mergeArrays(filesForLibraries, files);
+			}
+		}
+		return filesForLibraries;
 	}
 
 	private static String generateParameterForRun(@Nonnull DebugConnectionInfo debugConnectionInfo)
