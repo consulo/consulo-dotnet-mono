@@ -16,17 +16,6 @@
 
 package consulo.dotnet.mono.debugger.breakpoint;
 
-import gnu.trove.TIntHashSet;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.Couple;
@@ -60,16 +49,18 @@ import consulo.dotnet.mono.debugger.proxy.MonoMethodProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoTypeProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.util.ArrayUtil2;
+import consulo.util.collection.primitive.ints.IntSet;
+import consulo.util.collection.primitive.ints.IntSets;
 import consulo.util.lang.ref.SimpleReference;
-import mono.debugger.Location;
-import mono.debugger.LocationImpl;
-import mono.debugger.MethodMirror;
-import mono.debugger.TypeMirror;
-import mono.debugger.UnloadedElementException;
+import mono.debugger.*;
 import mono.debugger.protocol.Method_GetDebugInfo;
 import mono.debugger.request.BreakpointRequest;
 import mono.debugger.request.EventRequestManager;
 import mono.debugger.request.ExceptionRequest;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * @author VISTALL
@@ -435,7 +426,7 @@ public class MonoBreakpointUtil
 
 	private static void collectLocations(MonoVirtualMachineProxy virtualMachine, int breakpointLine, Map<MethodMirror, Location> methods, MethodMirror methodMirror, VirtualFile targetVFile)
 	{
-		TIntHashSet registeredLines = new TIntHashSet();
+		IntSet registeredLines = IntSets.newHashSet();
 		for(Method_GetDebugInfo.Entry entry : methodMirror.debugInfo())
 		{
 			if(entry.line == (breakpointLine + 1))
