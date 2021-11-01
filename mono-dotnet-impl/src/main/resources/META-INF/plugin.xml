@@ -21,6 +21,11 @@
 	<depends>consulo.dotnet</depends>
 	<category>Software Framework</category>
 
+	<permissions>
+		<permission type="PROCESS"/>
+		<permission type="SOCKET"/>
+	</permissions>
+
 	<extensions defaultExtensionNs="consulo.dotnet">
 		<documentationResolver implementation="consulo.mono.dotnet.documentation.MonoDocumentationResolver" />
 	</extensions>
