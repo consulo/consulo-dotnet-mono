@@ -21,6 +21,10 @@
 	<depends>consulo.dotnet</depends>
 	<category>Software Framework</category>
 
+	<tags>
+		<tag>software.framework</tag>
+	</tags>
+
 	<permissions>
 		<permission type="PROCESS"/>
 		<permission type="SOCKET"/>
