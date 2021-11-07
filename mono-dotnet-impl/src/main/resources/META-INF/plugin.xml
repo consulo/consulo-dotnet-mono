@@ -26,8 +26,10 @@
 	</tags>
 
 	<permissions>
-		<permission type="PROCESS"/>
-		<permission type="SOCKET"/>
+		<permission type="PROCESS_CREATE"/>
+		<permission type="SOCKET_CONNECT"/>
+		<permission type="SOCKET_BIND"/>
+		<permission type="GET_ENV"/>
 	</permissions>
 
 	<extensions defaultExtensionNs="consulo.dotnet">
