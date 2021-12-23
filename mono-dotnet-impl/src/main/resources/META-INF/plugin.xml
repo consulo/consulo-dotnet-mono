@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 
-<consulo-plugin>
+<consulo-plugin url="https://github.com/consulo/consulo-dotnet-mono">
 	<id>consulo.dotnet.mono</id>
 	<name>Mono (.NET Framework-compatible framework)</name>
 	<version>SNAPSHOT</version>
