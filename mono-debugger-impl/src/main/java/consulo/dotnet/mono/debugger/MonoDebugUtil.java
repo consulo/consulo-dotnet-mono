@@ -1,11 +1,11 @@
 package consulo.dotnet.mono.debugger;
 
-import com.intellij.openapi.project.Project;
 import consulo.annotation.access.RequiredReadAction;
 import consulo.dotnet.debugger.DotNetDebugContext;
 import consulo.dotnet.debugger.DotNetDebuggerUtil;
 import consulo.dotnet.psi.DotNetTypeDeclaration;
-import consulo.dotnet.resolve.DotNetPsiSearcher;
+import consulo.dotnet.psi.resolve.DotNetPsiSearcher;
+import consulo.project.Project;
 import mono.debugger.TypeMirror;
 
 import javax.annotation.Nonnull;

@@ -16,14 +16,14 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.intellij.openapi.util.NullableLazyValue;
+import consulo.application.util.NullableLazyValue;
 import consulo.dotnet.debugger.proxy.DotNetTypeProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;
 import mono.debugger.MirrorWithId;
 import mono.debugger.Value;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author VISTALL

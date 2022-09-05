@@ -16,21 +16,20 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.intellij.openapi.util.NotNullLazyValue;
-import com.intellij.util.BitUtil;
+import consulo.application.util.NotNullLazyValue;
 import consulo.dotnet.debugger.proxy.DotNetNotSuspendedException;
 import consulo.dotnet.debugger.proxy.DotNetStackFrameProxy;
 import consulo.dotnet.debugger.proxy.DotNetThreadProxy;
 import consulo.dotnet.util.ArrayUtil2;
+import consulo.util.lang.BitUtil;
 import mono.debugger.NotSuspendedException;
 import mono.debugger.StackFrameMirror;
 import mono.debugger.ThreadMirror;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author VISTALL

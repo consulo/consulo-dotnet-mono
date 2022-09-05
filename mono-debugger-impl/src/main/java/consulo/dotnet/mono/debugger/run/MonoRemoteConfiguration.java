@@ -14,33 +14,35 @@
  * limitations under the License.
  */
 
-package consulo.dotnet.mono.run;
+package consulo.dotnet.mono.debugger.run;
 
-import javax.annotation.Nonnull;
-
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.actions.StopProcessAction;
-import com.intellij.execution.configuration.ConfigurationFactoryEx;
-import com.intellij.execution.configurations.ConfigurationTypeBase;
-import com.intellij.execution.configurations.RunConfiguration;
-import com.intellij.execution.process.ProcessHandler;
-import com.intellij.execution.process.ProcessOutputTypes;
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.project.Project;
-import com.intellij.xdebugger.XDebugSession;
-import consulo.dotnet.debugger.DotNetDebugProcessBase;
-import consulo.dotnet.execution.DebugConnectionInfo;
+import consulo.annotation.component.ExtensionImpl;
+import consulo.application.AllIcons;
+import consulo.dotnet.debugger.impl.DotNetDebugProcessBase;
+import consulo.dotnet.debugger.impl.runner.remote.DotNetRemoteConfiguration;
 import consulo.dotnet.module.extension.DotNetModuleExtension;
 import consulo.dotnet.mono.debugger.MonoDebugProcess;
 import consulo.dotnet.mono.debugger.MonoVirtualMachineListener;
-import consulo.dotnet.run.remote.DotNetRemoteConfiguration;
+import consulo.dotnet.util.DebugConnectionInfo;
+import consulo.execution.configuration.ConfigurationFactoryEx;
+import consulo.execution.configuration.ConfigurationTypeBase;
+import consulo.execution.configuration.RunConfiguration;
+import consulo.execution.debug.XDebugSession;
 import consulo.module.extension.ModuleExtensionHelper;
+import consulo.process.ExecutionException;
+import consulo.process.ProcessHandler;
+import consulo.process.ProcessHandlerStopper;
+import consulo.process.ProcessOutputTypes;
+import consulo.project.Project;
 import mono.debugger.VirtualMachine;
+
+import javax.annotation.Nonnull;
 
 /**
  * @author VISTALL
  * @since 27-Dec-16
  */
+@ExtensionImpl
 public class MonoRemoteConfiguration extends ConfigurationTypeBase
 {
 	public MonoRemoteConfiguration()
@@ -78,7 +80,7 @@ public class MonoRemoteConfiguration extends ConfigurationTypeBase
 							{
 								ProcessHandler processHandler = process.getProcessHandler();
 								processHandler.notifyTextAvailable(String.format("Failed attach to %s:%d", info.getHost(), info.getPort()), ProcessOutputTypes.STDERR);
-								StopProcessAction.stopProcess(processHandler);
+								ProcessHandlerStopper.stop(processHandler);
 							}
 						});
 						return process;

@@ -1,20 +1,21 @@
 package consulo.mono.dotnet.module.extension;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.vfs.VirtualFile;
+import consulo.content.bundle.Sdk;
+import consulo.module.content.layer.ModifiableModuleRootLayer;
+import consulo.module.content.layer.ModuleRootLayer;
+import consulo.module.content.layer.extension.ModuleExtensionBase;
 import consulo.module.extension.ModuleExtensionWithSdk;
 import consulo.module.extension.ModuleInheritableNamedPointer;
-import consulo.module.extension.impl.ModuleExtensionImpl;
-import consulo.roots.ModifiableModuleRootLayer;
-import consulo.roots.ModuleRootLayer;
+import consulo.virtualFileSystem.VirtualFile;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author VISTALL
  * @since 05.05.14
  */
-public abstract class InnerMonoModuleExtension<T extends InnerMonoModuleExtension<T>> extends ModuleExtensionImpl<T> implements ModuleExtensionWithSdk<T>
+public abstract class InnerMonoModuleExtension<T extends InnerMonoModuleExtension<T>> extends ModuleExtensionBase<T> implements ModuleExtensionWithSdk<T>
 {
 	private ModuleInheritableNamedPointer<Sdk> myPointer;
 

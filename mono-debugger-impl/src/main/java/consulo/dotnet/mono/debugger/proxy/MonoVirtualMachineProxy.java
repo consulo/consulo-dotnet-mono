@@ -16,49 +16,40 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtilCore;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.SmartList;
-import com.intellij.util.concurrency.AppExecutorUtil;
-import com.intellij.util.containers.ContainerUtil;
-import com.intellij.util.containers.MultiMap;
-import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import consulo.application.AccessRule;
+import consulo.application.util.SystemInfo;
+import consulo.application.util.concurrent.AppExecutorUtil;
 import consulo.dotnet.debugger.DotNetDebuggerUtil;
 import consulo.dotnet.debugger.proxy.DotNetThreadProxy;
 import consulo.dotnet.debugger.proxy.DotNetTypeProxy;
 import consulo.dotnet.debugger.proxy.DotNetVirtualMachineProxy;
-import consulo.dotnet.debugger.proxy.value.DotNetBooleanValueProxy;
-import consulo.dotnet.debugger.proxy.value.DotNetCharValueProxy;
-import consulo.dotnet.debugger.proxy.value.DotNetNullValueProxy;
-import consulo.dotnet.debugger.proxy.value.DotNetNumberValueProxy;
-import consulo.dotnet.debugger.proxy.value.DotNetStringValueProxy;
+import consulo.dotnet.debugger.proxy.value.*;
 import consulo.dotnet.module.extension.DotNetModuleLangExtension;
 import consulo.dotnet.mono.debugger.TypeMirrorUnloadedException;
-import consulo.vfs.util.ArchiveVfsUtil;
+import consulo.execution.debug.breakpoint.XBreakpoint;
+import consulo.language.util.ModuleUtilCore;
+import consulo.logging.Logger;
+import consulo.module.Module;
+import consulo.module.content.ProjectFileIndex;
+import consulo.project.Project;
+import consulo.util.collection.ContainerUtil;
+import consulo.util.collection.MultiMap;
+import consulo.util.collection.SmartList;
+import consulo.util.lang.Comparing;
+import consulo.virtualFileSystem.VirtualFile;
+import consulo.virtualFileSystem.archive.ArchiveVfsUtil;
 import mono.debugger.*;
 import mono.debugger.request.EventRequest;
 import mono.debugger.request.EventRequestManager;
 import mono.debugger.request.StepRequest;
 import mono.debugger.request.TypeLoadRequest;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author VISTALL
@@ -80,8 +71,8 @@ public class MonoVirtualMachineProxy implements DotNetVirtualMachineProxy
 
 	private static final Logger LOGGER = Logger.getInstance(MonoVirtualMachineProxy.class);
 
-	private final Map<Integer, AppDomainMirror> myLoadedAppDomains = ContainerUtil.newConcurrentMap();
-	private final Set<StepRequest> myStepRequests = ContainerUtil.newLinkedHashSet();
+	private final Map<Integer, AppDomainMirror> myLoadedAppDomains = new ConcurrentHashMap<>();
+	private final Set<StepRequest> myStepRequests = new LinkedHashSet<>();
 	private final MultiMap<XBreakpoint, EventRequest> myBreakpointEventRequests = MultiMap.create();
 
 	private final Map<XBreakpoint<?>, String> myQNameByBreakpoint = new ConcurrentHashMap<>();
