@@ -1,12 +1,12 @@
 package consulo.mono.dotnet.module.extension;
 
 import consulo.annotation.component.ExtensionImpl;
-import consulo.dotnet.mono.icon.MonoDotNetIconGroup;
 import consulo.localize.LocalizeValue;
 import consulo.module.content.layer.ModuleExtensionProvider;
 import consulo.module.content.layer.ModuleRootLayer;
 import consulo.module.extension.ModuleExtension;
 import consulo.module.extension.MutableModuleExtension;
+import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
 import consulo.ui.image.Image;
 
 import javax.annotation.Nonnull;

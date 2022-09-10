@@ -22,4 +22,5 @@ module consulo.dotnet.mono {
 
     exports consulo.mono.dotnet.module.extension;
     exports consulo.mono.dotnet.sdk;
+    exports consulo.mono.dotnet.icon;
 }
