@@ -16,23 +16,18 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-import com.intellij.util.Function;
-import com.intellij.util.containers.ContainerUtil;
 import consulo.dotnet.debugger.proxy.DotNetFieldOrPropertyProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetStructValueProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxyVisitor;
-import mono.debugger.FieldMirror;
-import mono.debugger.FieldOrPropertyMirror;
-import mono.debugger.PropertyMirror;
-import mono.debugger.StructValueMirror;
-import mono.debugger.Value;
+import consulo.util.collection.ContainerUtil;
+import mono.debugger.*;
+
+import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author VISTALL
@@ -50,14 +45,7 @@ public class MonoStructValueProxy extends MonoValueProxyBase<StructValueMirror> 
 	public DotNetStructValueProxy createNewStructValue(@Nonnull Map<DotNetFieldOrPropertyProxy, DotNetValueProxy> map)
 	{
 		Collection<DotNetValueProxy> proxies = map.values();
-		List<Value> values = ContainerUtil.map(proxies, new Function<DotNetValueProxy, Value>()
-		{
-			@Override
-			public Value fun(DotNetValueProxy proxy)
-			{
-				return ((MonoValueProxyBase) proxy).getMirror();
-			}
-		});
+		List<Value> values = ContainerUtil.map(proxies, proxy -> ((MonoValueProxyBase) proxy).getMirror());
 
 		return new MonoStructValueProxy(new StructValueMirror(myValue.virtualMachine(), myValue.type(), values.toArray(new Value[values.size()])));
 	}

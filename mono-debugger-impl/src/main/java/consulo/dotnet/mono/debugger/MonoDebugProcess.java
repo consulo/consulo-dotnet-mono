@@ -16,21 +16,21 @@
 
 package consulo.dotnet.mono.debugger;
 
-import com.intellij.execution.configurations.RunProfile;
-import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.XDebuggerBundle;
-import com.intellij.xdebugger.XDebuggerManager;
-import com.intellij.xdebugger.XSourcePosition;
-import com.intellij.xdebugger.breakpoints.*;
-import com.intellij.xdebugger.frame.XSuspendContext;
 import consulo.annotation.access.RequiredReadAction;
-import consulo.dotnet.debugger.DotNetDebugProcessBase;
-import consulo.dotnet.debugger.DotNetSuspendContext;
-import consulo.dotnet.debugger.breakpoint.DotNetExceptionBreakpointType;
-import consulo.dotnet.debugger.breakpoint.DotNetLineBreakpointType;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetExceptionBreakpointProperties;
-import consulo.dotnet.execution.DebugConnectionInfo;
+import consulo.dotnet.debugger.impl.DotNetDebugProcessBase;
+import consulo.dotnet.debugger.impl.DotNetSuspendContext;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetExceptionBreakpointType;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetLineBreakpointType;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetExceptionBreakpointProperties;
 import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
+import consulo.dotnet.util.DebugConnectionInfo;
+import consulo.execution.configuration.RunProfile;
+import consulo.execution.debug.*;
+import consulo.execution.debug.breakpoint.XBreakpoint;
+import consulo.execution.debug.breakpoint.XBreakpointType;
+import consulo.execution.debug.breakpoint.XLineBreakpoint;
+import consulo.execution.debug.event.XBreakpointListener;
+import consulo.execution.debug.frame.XSuspendContext;
 import mono.debugger.Location;
 import mono.debugger.NoInvocationException;
 import mono.debugger.ThreadMirror;

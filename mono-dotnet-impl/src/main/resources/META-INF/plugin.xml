@@ -31,20 +31,4 @@
 		<permission type="SOCKET_BIND"/>
 		<permission type="GET_ENV"/>
 	</permissions>
-
-	<extensions defaultExtensionNs="consulo.dotnet">
-		<documentationResolver implementation="consulo.mono.dotnet.documentation.MonoDocumentationResolver" />
-	</extensions>
-
-	<extensions defaultExtensionNs="com.intellij">
-		<configurationType implementation="consulo.dotnet.mono.run.MonoRemoteConfiguration"/>
-
-		<moduleExtensionProvider key="mono-dotnet"
-								 name="Mono"
-								 icon="consulo.dotnet.mono.MonoDotNetIconGroup@mono"
-								 immutableClass="consulo.mono.dotnet.module.extension.MonoDotNetModuleExtension"
-								 mutableClass="consulo.mono.dotnet.module.extension.MonoDotNetMutableModuleExtension"/>
-
-		<sdkType implementation="consulo.mono.dotnet.sdk.MonoSdkType"/>
-	</extensions>
 </consulo-plugin>

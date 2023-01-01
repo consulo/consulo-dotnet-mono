@@ -16,26 +16,26 @@
 
 package consulo.mono.dotnet.module.extension;
 
-import com.intellij.execution.ExecutionException;
-import com.intellij.execution.configurations.GeneralCommandLine;
-import com.intellij.execution.configurations.RunProfile;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.projectRoots.SdkType;
-import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.containers.ContainerUtil;
-import com.intellij.xdebugger.XDebugSession;
+import consulo.content.OrderRootType;
+import consulo.content.base.DocumentationOrderRootType;
+import consulo.content.bundle.Sdk;
+import consulo.content.bundle.SdkType;
 import consulo.dotnet.compiler.DotNetMacroUtil;
-import consulo.dotnet.debugger.DotNetDebugProcessBase;
-import consulo.dotnet.debugger.DotNetModuleExtensionWithDebug;
-import consulo.dotnet.execution.DebugConnectionInfo;
+import consulo.dotnet.debugger.impl.DotNetDebugProcessBase;
+import consulo.dotnet.debugger.impl.DotNetModuleExtensionWithDebug;
 import consulo.dotnet.module.extension.BaseDotNetModuleExtension;
 import consulo.dotnet.mono.debugger.MonoDebugProcess;
+import consulo.dotnet.util.DebugConnectionInfo;
+import consulo.execution.configuration.RunProfile;
+import consulo.execution.debug.XDebugSession;
+import consulo.module.content.layer.ModuleRootLayer;
 import consulo.mono.dotnet.sdk.MonoSdkType;
-import consulo.roots.ModuleRootLayer;
-import consulo.roots.types.DocumentationOrderRootType;
+import consulo.process.ExecutionException;
+import consulo.process.cmd.GeneralCommandLine;
 import consulo.util.collection.ArrayUtil;
+import consulo.util.collection.ContainerUtil;
+import consulo.util.lang.Comparing;
+import consulo.virtualFileSystem.VirtualFile;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

@@ -16,18 +16,19 @@
 
 package consulo.mono.dotnet.documentation;
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.JDOMUtil;
-import com.intellij.openapi.vfs.VfsUtilCore;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElement;
-import com.intellij.util.containers.ContainerUtil;
 import consulo.annotation.access.RequiredReadAction;
+import consulo.annotation.component.ExtensionImpl;
 import consulo.dotnet.documentation.DotNetDocumentationResolver;
 import consulo.dotnet.psi.DotNetMethodDeclaration;
 import consulo.dotnet.psi.DotNetQualifiedElement;
 import consulo.dotnet.psi.DotNetTypeDeclaration;
+import consulo.language.psi.PsiElement;
+import consulo.logging.Logger;
+import consulo.util.collection.ContainerUtil;
+import consulo.util.jdom.JDOMUtil;
+import consulo.util.lang.Comparing;
+import consulo.virtualFileSystem.VirtualFile;
+import consulo.virtualFileSystem.util.VirtualFileUtil;
 import org.emonic.base.documentation.IDocumentation;
 import org.emonic.base.documentation.ITypeDocumentation;
 import org.emonic.monodoc.MonodocTree;
@@ -46,6 +47,7 @@ import java.util.Map;
  * @author VISTALL
  * @since 13.05.14
  */
+@ExtensionImpl
 public class MonoDocumentationResolver implements DotNetDocumentationResolver
 {
 	private static final Logger LOGGER = Logger.getInstance(MonoDocumentationResolver.class);
@@ -140,7 +142,7 @@ public class MonoDocumentationResolver implements DotNetDocumentationResolver
 				{
 					continue;
 				}
-				MonodocTree tree = new MonodocTree(VfsUtilCore.virtualToIoFile(treeFile), VfsUtilCore.virtualToIoFile(zipFile));
+				MonodocTree tree = new MonodocTree(VirtualFileUtil.virtualToIoFile(treeFile), VirtualFileUtil.virtualToIoFile(zipFile));
 
 				tree.loadNode();
 

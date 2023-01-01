@@ -1,10 +1,5 @@
 package consulo.dotnet.mono.debugger.proxy;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import org.joou.ULong;
-import com.intellij.util.BitUtil;
 import consulo.dotnet.debugger.proxy.DotNetFieldProxy;
 import consulo.dotnet.debugger.proxy.DotNetStackFrameProxy;
 import consulo.dotnet.debugger.proxy.DotNetThrowValueException;
@@ -13,10 +8,15 @@ import consulo.dotnet.debugger.proxy.value.DotNetEnumValueProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetNumberValueProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;
 import consulo.internal.dotnet.asm.signature.FieldAttributes;
+import consulo.util.lang.BitUtil;
 import mono.debugger.FieldMirror;
 import mono.debugger.ObjectValueMirror;
 import mono.debugger.ThrowValueException;
 import mono.debugger.TypeMirror;
+import org.joou.ULong;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * @author VISTALL

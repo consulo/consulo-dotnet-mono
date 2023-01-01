@@ -16,31 +16,27 @@
 
 package consulo.mono.dotnet.sdk;
 
-import com.intellij.ide.DataManager;
-import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.fileChooser.FileChooser;
-import com.intellij.openapi.fileChooser.FileChooserDescriptor;
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.projectRoots.SdkModel;
-import com.intellij.openapi.projectRoots.SdkModificator;
-import com.intellij.openapi.projectRoots.SdkTable;
-import com.intellij.openapi.projectRoots.impl.SdkConfigurationUtil;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.popup.JBPopupFactory;
-import com.intellij.openapi.ui.popup.ListPopup;
-import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.util.SystemInfo;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Consumer;
-import consulo.dotnet.mono.icon.MonoDotNetIconGroup;
+import consulo.annotation.component.ExtensionImpl;
+import consulo.application.util.SystemInfo;
+import consulo.content.bundle.*;
+import consulo.dataContext.DataContext;
+import consulo.dataContext.DataManager;
 import consulo.dotnet.sdk.DotNetSdkType;
+import consulo.fileChooser.FileChooserDescriptor;
+import consulo.fileChooser.FileChooserDescriptorFactory;
+import consulo.fileChooser.IdeaFileChooser;
+import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
 import consulo.ui.annotation.RequiredUIAccess;
+import consulo.ui.ex.action.ActionGroup;
+import consulo.ui.ex.action.AnAction;
+import consulo.ui.ex.action.AnActionEvent;
+import consulo.ui.ex.awt.Messages;
+import consulo.ui.ex.popup.JBPopupFactory;
+import consulo.ui.ex.popup.ListPopup;
 import consulo.ui.image.Image;
+import consulo.util.lang.Pair;
+import consulo.virtualFileSystem.LocalFileSystem;
+import consulo.virtualFileSystem.VirtualFile;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -50,12 +46,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author VISTALL
  * @since 06.12.13.
  */
-public class MonoSdkType extends DotNetSdkType
+@ExtensionImpl
+public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreateUI
 {
 	public static final String ourDefaultLinuxCompilerPath = "/usr/bin/mcs";
 	public static final String ourDefaultFreeBSDCompilerPath = "/usr/local/bin/mcs";
@@ -214,12 +212,6 @@ public class MonoSdkType extends DotNetSdkType
 	}
 
 	@Override
-	public boolean supportsCustomCreateUI()
-	{
-		return true;
-	}
-
-	@Override
 	public void showCustomCreateUI(SdkModel sdkModel, JComponent parentComponent, final Consumer<Sdk> sdkCreatedCallback)
 	{
 		File monoLib = null;
@@ -248,7 +240,7 @@ public class MonoSdkType extends DotNetSdkType
 			FileChooserDescriptor singleFolderDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
 			String toSelectPath = getDefaultHomePath();
 			VirtualFile toSelect = toSelectPath == null ? null : LocalFileSystem.getInstance().findFileByPath(toSelectPath);
-			VirtualFile monoDir = FileChooser.chooseFile(singleFolderDescriptor, null, toSelect);
+			VirtualFile monoDir = IdeaFileChooser.chooseFile(singleFolderDescriptor, null, toSelect);
 			if(monoDir == null)
 			{
 				return;
@@ -295,14 +287,14 @@ public class MonoSdkType extends DotNetSdkType
 					File path = pair.getSecond();
 					String absolutePath = path.getAbsolutePath();
 
-					String uniqueSdkName = SdkConfigurationUtil.createUniqueSdkName(MonoSdkType.this, absolutePath, SdkTable.getInstance().getAllSdks());
+					String uniqueSdkName = SdkUtil.createUniqueSdkName(MonoSdkType.this, absolutePath, SdkTable.getInstance().getAllSdks());
 					Sdk sdk = SdkTable.getInstance().createSdk(uniqueSdkName, MonoSdkType.this);
 					SdkModificator modificator = sdk.getSdkModificator();
 					modificator.setVersionString(getVersionString(absolutePath));
 					modificator.setHomePath(absolutePath);
 					modificator.commitChanges();
 
-					sdkCreatedCallback.consume(sdk);
+					sdkCreatedCallback.accept(sdk);
 				}
 			});
 		}

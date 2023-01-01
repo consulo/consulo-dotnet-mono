@@ -16,6 +16,41 @@
 
 package consulo.dotnet.mono.debugger;
 
+import consulo.annotation.UsedInPlugin;
+import consulo.application.AccessRule;
+import consulo.application.util.function.Processor;
+import consulo.dotnet.debugger.DotNetDebugContext;
+import consulo.dotnet.debugger.impl.DotNetDebugProcessBase;
+import consulo.dotnet.debugger.impl.DotNetSuspendContext;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetBreakpointEngine;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetBreakpointUtil;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetExceptionBreakpointProperties;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetMethodBreakpointProperties;
+import consulo.dotnet.debugger.proxy.DotNetNotSuspendedException;
+import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
+import consulo.dotnet.mono.debugger.proxy.MonoThreadProxy;
+import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
+import consulo.dotnet.psi.DotNetTypeDeclaration;
+import consulo.dotnet.util.DebugConnectionInfo;
+import consulo.execution.debug.XDebugSession;
+import consulo.execution.debug.breakpoint.XBreakpoint;
+import consulo.execution.debug.breakpoint.XLineBreakpoint;
+import consulo.execution.ui.console.ConsoleView;
+import consulo.execution.ui.console.ConsoleViewContentType;
+import consulo.language.editor.util.PsiUtilBase;
+import consulo.logging.Logger;
+import consulo.proxy.EventDispatcher;
+import consulo.util.lang.Comparing;
+import consulo.util.lang.StringUtil;
+import consulo.virtualFileSystem.VirtualFile;
+import consulo.virtualFileSystem.VirtualFileManager;
+import mono.debugger.*;
+import mono.debugger.connect.Connector;
+import mono.debugger.event.*;
+import mono.debugger.request.EventRequest;
+import mono.debugger.request.TypeLoadRequest;
+
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -23,55 +58,6 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
-
-
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.util.PsiUtilBase;
-import com.intellij.util.EventDispatcher;
-import com.intellij.util.Processor;
-import com.intellij.util.ui.UIUtil;
-import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.breakpoints.XBreakpoint;
-import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
-import com.intellij.xdebugger.impl.XDebugSessionImpl;
-import com.intellij.xdebugger.impl.settings.XDebuggerSettingManagerImpl;
-import com.intellij.xdebugger.impl.ui.XDebugSessionTab;
-import com.intellij.xdebugger.impl.ui.XDebuggerUIConstants;
-import consulo.annotation.UsedInPlugin;
-import consulo.application.AccessRule;
-import consulo.dotnet.debugger.DotNetDebugContext;
-import consulo.dotnet.debugger.DotNetDebugProcessBase;
-import consulo.dotnet.debugger.DotNetSuspendContext;
-import consulo.dotnet.debugger.breakpoint.DotNetBreakpointEngine;
-import consulo.dotnet.debugger.breakpoint.DotNetBreakpointUtil;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetExceptionBreakpointProperties;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetMethodBreakpointProperties;
-import consulo.dotnet.debugger.proxy.DotNetNotSuspendedException;
-import consulo.dotnet.execution.DebugConnectionInfo;
-import consulo.dotnet.mono.debugger.breakpoint.MonoBreakpointUtil;
-import consulo.dotnet.mono.debugger.proxy.MonoThreadProxy;
-import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
-import consulo.dotnet.psi.DotNetTypeDeclaration;
-import mono.debugger.AppDomainMirror;
-import mono.debugger.EventKind;
-import mono.debugger.NotSuspendedException;
-import mono.debugger.SocketAttachingConnector;
-import mono.debugger.SocketListeningConnector;
-import mono.debugger.TypeMirror;
-import mono.debugger.VMDisconnectedException;
-import mono.debugger.VirtualMachine;
-import mono.debugger.connect.Connector;
-import mono.debugger.event.*;
-import mono.debugger.request.EventRequest;
-import mono.debugger.request.TypeLoadRequest;
 
 /**
  * @author VISTALL
@@ -375,26 +361,7 @@ public class MonoDebugThread extends Thread
 						myVirtualMachine.stopStepRequests();
 
 						myDebugProcess.setPausedEventSet(eventSet);
-
-						if(focusUI)
-						{
-							UIUtil.invokeLaterIfNeeded(new Runnable()
-							{
-								@Override
-								public void run()
-								{
-									XDebugSessionTab sessionTab = ((XDebugSessionImpl) mySession).getSessionTab();
-									if(sessionTab != null)
-									{
-										if(XDebuggerSettingManagerImpl.getInstanceImpl().getGeneralSettings().isShowDebuggerOnBreakpoint())
-										{
-											sessionTab.toFront(true, null);
-										}
-										sessionTab.getUi().attractBy(XDebuggerUIConstants.LAYOUT_VIEW_BREAKPOINT_CONDITION);
-									}
-								}
-							});
-						}
+						
 						break;
 					}
 					else

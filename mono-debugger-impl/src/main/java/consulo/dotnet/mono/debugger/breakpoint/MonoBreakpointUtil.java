@@ -16,42 +16,40 @@
 
 package consulo.dotnet.mono.debugger.breakpoint;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Comparing;
-import com.intellij.openapi.util.Couple;
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.util.PsiTreeUtil;
-import com.intellij.util.containers.ContainerUtil;
-import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.breakpoints.SuspendPolicy;
-import com.intellij.xdebugger.breakpoints.XBreakpoint;
-import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import consulo.annotation.access.RequiredReadAction;
 import consulo.application.AccessRule;
 import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolver;
-import consulo.dotnet.debugger.DotNetDebuggerSourceLineResolverEP;
 import consulo.dotnet.debugger.DotNetDebuggerUtil;
-import consulo.dotnet.debugger.breakpoint.DotNetBreakpointUtil;
-import consulo.dotnet.debugger.breakpoint.DotNetExceptionBreakpointType;
-import consulo.dotnet.debugger.breakpoint.DotNetLineBreakpointType;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetExceptionBreakpointProperties;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetLineBreakpointProperties;
-import consulo.dotnet.debugger.breakpoint.properties.DotNetMethodBreakpointProperties;
-import consulo.dotnet.debugger.nodes.DotNetDebuggerCompilerGenerateUtil;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetBreakpointUtil;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetExceptionBreakpointType;
+import consulo.dotnet.debugger.impl.breakpoint.DotNetLineBreakpointType;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetExceptionBreakpointProperties;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetLineBreakpointProperties;
+import consulo.dotnet.debugger.impl.breakpoint.properties.DotNetMethodBreakpointProperties;
+import consulo.dotnet.debugger.impl.nodes.DotNetDebuggerCompilerGenerateUtil;
 import consulo.dotnet.mono.debugger.TypeMirrorUnloadedException;
 import consulo.dotnet.mono.debugger.proxy.MonoMethodProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoTypeProxy;
 import consulo.dotnet.mono.debugger.proxy.MonoVirtualMachineProxy;
 import consulo.dotnet.util.ArrayUtil2;
+import consulo.execution.debug.XDebugSession;
+import consulo.execution.debug.breakpoint.XBreakpoint;
+import consulo.execution.debug.breakpoint.XLineBreakpoint;
+import consulo.language.psi.PsiElement;
+import consulo.language.psi.PsiFile;
+import consulo.language.psi.PsiManager;
+import consulo.language.psi.util.PsiTreeUtil;
+import consulo.project.Project;
+import consulo.util.collection.ContainerUtil;
 import consulo.util.collection.primitive.ints.IntSet;
 import consulo.util.collection.primitive.ints.IntSets;
+import consulo.util.lang.Comparing;
+import consulo.util.lang.Couple;
+import consulo.util.lang.StringUtil;
 import consulo.util.lang.ref.SimpleReference;
+import consulo.virtualFileSystem.LocalFileSystem;
+import consulo.virtualFileSystem.VirtualFile;
+import consulo.virtualFileSystem.VirtualFileManager;
 import mono.debugger.*;
 import mono.debugger.protocol.Method_GetDebugInfo;
 import mono.debugger.request.BreakpointRequest;
@@ -140,7 +138,7 @@ public class MonoBreakpointUtil
 			{
 				return null;
 			}
-			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
+			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolver.forLanguage(file.getLanguage());
 			assert resolver != null;
 			return resolver.resolveParentVmQName(psiElement);
 		});
@@ -187,7 +185,7 @@ public class MonoBreakpointUtil
 
 	public static void createBreakpointRequest(@Nonnull XDebugSession debugSession,
 											   @Nonnull MonoVirtualMachineProxy virtualMachine,
-											   @Nonnull XLineBreakpoint breakpoint,
+											   @Nonnull XLineBreakpoint<?> breakpoint,
 											   @Nullable TypeMirror typeMirror,
 											   boolean insertTypeLoad)
 	{
@@ -204,7 +202,7 @@ public class MonoBreakpointUtil
 			virtualMachine.disposeAllRelatedDataForBreakpoint(breakpoint, insertTypeLoad);
 
 			Collection<Location> locations = result.getLocations();
-			if(breakpoint.getSuspendPolicy() != SuspendPolicy.NONE)
+			if(breakpoint.getSuspendPolicy() != consulo.execution.debug.breakpoint.SuspendPolicy.NONE)
 			{
 				for(Location location : locations)
 				{
@@ -269,7 +267,7 @@ public class MonoBreakpointUtil
 			{
 				return null;
 			}
-			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolverEP.INSTANCE.forLanguage(file.getLanguage());
+			DotNetDebuggerSourceLineResolver resolver = DotNetDebuggerSourceLineResolver.forLanguage(file.getLanguage());
 			assert resolver != null;
 			resolverRef.set(resolver);
 			return resolver.resolveParentVmQName(psiElement);
