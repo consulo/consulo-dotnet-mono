@@ -23,8 +23,9 @@ import consulo.dotnet.debugger.impl.runner.remote.DotNetRemoteConfiguration;
 import consulo.dotnet.module.extension.DotNetModuleExtension;
 import consulo.dotnet.mono.debugger.MonoDebugProcess;
 import consulo.dotnet.mono.debugger.MonoVirtualMachineListener;
+import consulo.dotnet.mono.debugger.localize.MonoDebuggerLocalize;
 import consulo.dotnet.util.DebugConnectionInfo;
-import consulo.execution.configuration.ConfigurationFactoryEx;
+import consulo.execution.configuration.ConfigurationFactory;
 import consulo.execution.configuration.ConfigurationTypeBase;
 import consulo.execution.configuration.RunConfiguration;
 import consulo.execution.debug.XDebugSession;
@@ -47,9 +48,9 @@ public class MonoRemoteConfiguration extends ConfigurationTypeBase
 {
 	public MonoRemoteConfiguration()
 	{
-		super("MonoRemoteConfiguration", "Mono Remote", "", AllIcons.RunConfigurations.Remote);
+		super("MonoRemoteConfiguration", MonoDebuggerLocalize.monoRemoteConfigurationName(), AllIcons.RunConfigurations.Remote);
 
-		addFactory(new ConfigurationFactoryEx(this)
+		addFactory(new ConfigurationFactory(this)
 		{
 			@Override
 			public RunConfiguration createTemplateConfiguration(Project project)
