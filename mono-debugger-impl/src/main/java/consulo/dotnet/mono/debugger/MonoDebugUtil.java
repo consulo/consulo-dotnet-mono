@@ -8,7 +8,7 @@ import consulo.dotnet.psi.resolve.DotNetPsiSearcher;
 import consulo.project.Project;
 import mono.debugger.TypeMirror;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * @author VISTALL

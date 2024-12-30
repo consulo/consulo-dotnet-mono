@@ -40,8 +40,8 @@ import mono.debugger.request.BreakpointRequest;
 import mono.debugger.request.EventRequestManager;
 import mono.debugger.request.StepRequest;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Collection;
 
 /**

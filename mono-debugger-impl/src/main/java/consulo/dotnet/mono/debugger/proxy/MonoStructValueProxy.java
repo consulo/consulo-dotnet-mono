@@ -23,7 +23,7 @@ import consulo.dotnet.debugger.proxy.value.DotNetValueProxyVisitor;
 import consulo.util.collection.ContainerUtil;
 import mono.debugger.*;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;

@@ -1,6 +1,6 @@
 package consulo.dotnet.mono.debugger.proxy;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import consulo.dotnet.debugger.proxy.DotNetLocalVariableProxy;
 import mono.debugger.LocalVariableMirror;

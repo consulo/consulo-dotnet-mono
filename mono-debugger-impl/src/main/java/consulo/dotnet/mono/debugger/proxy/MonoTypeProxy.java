@@ -18,8 +18,8 @@ package consulo.dotnet.mono.debugger.proxy;
 
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 import org.jetbrains.annotations.Contract;
 import consulo.dotnet.debugger.proxy.DotNetFieldProxy;

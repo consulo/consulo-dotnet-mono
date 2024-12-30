@@ -50,7 +50,7 @@ import mono.debugger.event.*;
 import mono.debugger.request.EventRequest;
 import mono.debugger.request.TypeLoadRequest;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;

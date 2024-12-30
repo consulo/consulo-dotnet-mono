@@ -7,8 +7,8 @@ import consulo.dotnet.debugger.proxy.DotNetVariableProxy;
 import mono.debugger.MirrorWithIdAndName;
 import mono.debugger.TypeMirror;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * @author VISTALL

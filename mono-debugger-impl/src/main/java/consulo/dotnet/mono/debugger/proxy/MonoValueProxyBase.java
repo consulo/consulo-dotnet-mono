@@ -22,8 +22,8 @@ import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;
 import mono.debugger.MirrorWithId;
 import mono.debugger.Value;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * @author VISTALL

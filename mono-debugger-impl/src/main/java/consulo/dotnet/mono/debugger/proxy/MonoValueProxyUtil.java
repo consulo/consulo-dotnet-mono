@@ -16,7 +16,7 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.jetbrains.annotations.Contract;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxy;

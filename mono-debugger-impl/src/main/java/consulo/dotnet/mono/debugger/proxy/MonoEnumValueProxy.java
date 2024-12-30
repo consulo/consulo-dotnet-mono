@@ -16,7 +16,7 @@
 
 package consulo.dotnet.mono.debugger.proxy;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 import consulo.dotnet.debugger.proxy.value.DotNetEnumValueProxy;
 import consulo.dotnet.debugger.proxy.value.DotNetValueProxyVisitor;
 import mono.debugger.EnumValueMirror;

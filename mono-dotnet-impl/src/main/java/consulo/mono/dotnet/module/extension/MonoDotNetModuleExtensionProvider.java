@@ -9,7 +9,7 @@ import consulo.module.extension.MutableModuleExtension;
 import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
 import consulo.ui.image.Image;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * @author VISTALL

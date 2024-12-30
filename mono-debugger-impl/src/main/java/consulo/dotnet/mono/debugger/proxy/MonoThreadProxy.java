@@ -26,8 +26,8 @@ import mono.debugger.NotSuspendedException;
 import mono.debugger.StackFrameMirror;
 import mono.debugger.ThreadMirror;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 

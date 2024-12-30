@@ -37,7 +37,7 @@ import consulo.process.ProcessOutputTypes;
 import consulo.project.Project;
 import mono.debugger.VirtualMachine;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 /**
  * @author VISTALL

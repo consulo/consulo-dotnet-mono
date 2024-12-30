@@ -18,7 +18,7 @@ package consulo.dotnet.mono.debugger;
 
 import java.util.EventListener;
 
-import javax.annotation.Nonnull;
+import jakarta.annotation.Nonnull;
 
 import mono.debugger.VirtualMachine;
 

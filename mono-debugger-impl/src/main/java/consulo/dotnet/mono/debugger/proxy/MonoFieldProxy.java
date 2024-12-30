@@ -15,8 +15,8 @@ import mono.debugger.ThrowValueException;
 import mono.debugger.TypeMirror;
 import org.joou.ULong;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * @author VISTALL
