@@ -26,6 +26,7 @@ import consulo.dotnet.sdk.DotNetSdkType;
 import consulo.fileChooser.FileChooserDescriptor;
 import consulo.fileChooser.FileChooserDescriptorFactory;
 import consulo.fileChooser.IdeaFileChooser;
+import consulo.localize.LocalizeValue;
 import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
 import consulo.ui.annotation.RequiredUIAccess;
 import consulo.ui.ex.action.ActionGroup;
@@ -34,7 +35,6 @@ import consulo.ui.ex.action.AnActionEvent;
 import consulo.ui.ex.awt.Messages;
 import consulo.ui.ex.popup.JBPopupFactory;
 import consulo.ui.ex.popup.ListPopup;
-import consulo.ui.image.Image;
 import consulo.util.lang.Pair;
 import consulo.virtualFileSystem.LocalFileSystem;
 import consulo.virtualFileSystem.VirtualFile;
@@ -92,7 +92,7 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
     }
 
     public MonoSdkType() {
-        super("MONO_DOTNET_SDK");
+        super("MONO_DOTNET_SDK", LocalizeValue.localizeTODO("Mono"), MonoDotNetIconGroup.mono());
     }
 
     @Nonnull
@@ -165,22 +165,11 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         return directoryName;
     }
 
+    @Nonnull
     @Override
     public String suggestSdkName(String currentSdkName, String sdkHome) {
         File file = new File(sdkHome);
-        return getPresentableName() + " " + file.getName();
-    }
-
-    @Nonnull
-    @Override
-    public String getPresentableName() {
-        return "Mono";
-    }
-
-    @Nonnull
-    @Override
-    public Image getIcon() {
-        return MonoDotNetIconGroup.mono();
+        return getDisplayName().get() + " " + file.getName();
     }
 
     @Override
