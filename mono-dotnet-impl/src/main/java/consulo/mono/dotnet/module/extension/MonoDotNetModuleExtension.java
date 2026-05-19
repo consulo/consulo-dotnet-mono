@@ -16,7 +16,6 @@
 
 package consulo.mono.dotnet.module.extension;
 
-import consulo.content.OrderRootType;
 import consulo.content.base.DocumentationOrderRootType;
 import consulo.content.bundle.Sdk;
 import consulo.content.bundle.SdkType;
@@ -36,9 +35,9 @@ import consulo.util.collection.ArrayUtil;
 import consulo.util.collection.ContainerUtil;
 import consulo.util.lang.Comparing;
 import consulo.virtualFileSystem.VirtualFile;
-
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,128 +46,108 @@ import java.util.List;
  * @author VISTALL
  * @since 20.11.13.
  */
-public class MonoDotNetModuleExtension extends BaseDotNetModuleExtension<MonoDotNetModuleExtension> implements DotNetModuleExtensionWithDebug
-{
-	public MonoDotNetModuleExtension(@Nonnull String id, @Nonnull ModuleRootLayer rootModel)
-	{
-		super(id, rootModel);
-	}
+public class MonoDotNetModuleExtension extends BaseDotNetModuleExtension<MonoDotNetModuleExtension> implements DotNetModuleExtensionWithDebug {
+    public MonoDotNetModuleExtension(@Nonnull String id, @Nonnull ModuleRootLayer rootModel) {
+        super(id, rootModel);
+    }
 
-	@Nonnull
-	@Override
-	public Class<? extends SdkType> getSdkTypeClass()
-	{
-		return MonoSdkType.class;
-	}
+    @Nonnull
+    @Override
+    public Class<? extends SdkType> getSdkTypeClass() {
+        return MonoSdkType.class;
+    }
 
-	@Nonnull
-	@Override
-	public DotNetDebugProcessBase createDebuggerProcess(@Nonnull XDebugSession session, @Nonnull RunProfile runProfile, @Nonnull DebugConnectionInfo debugConnectionInfo)
-	{
-		return new MonoDebugProcess(session, runProfile, debugConnectionInfo);
-	}
+    @Nonnull
+    @Override
+    public DotNetDebugProcessBase createDebuggerProcess(@Nonnull XDebugSession session, @Nonnull RunProfile runProfile, @Nonnull DebugConnectionInfo debugConnectionInfo) {
+        return new MonoDebugProcess(session, runProfile, debugConnectionInfo);
+    }
 
-	@Nonnull
-	@Override
-	public GeneralCommandLine createDefaultCommandLine(@Nonnull Sdk sdk, @Nullable DebugConnectionInfo debugConnectionInfo) throws ExecutionException
-	{
-		String fileName = DotNetMacroUtil.expandOutputFile(this);
-		return createDefaultCommandLineImpl(sdk, debugConnectionInfo, fileName);
-	}
+    @Nonnull
+    @Override
+    public GeneralCommandLine createDefaultCommandLine(@Nonnull Sdk sdk, @Nullable DebugConnectionInfo debugConnectionInfo) throws ExecutionException {
+        String fileName = DotNetMacroUtil.expandOutputFile(this);
+        return createDefaultCommandLineImpl(sdk, debugConnectionInfo, fileName);
+    }
 
-	@Nonnull
-	public static GeneralCommandLine createDefaultCommandLineImpl(@Nonnull Sdk sdk,
-			@Nullable DebugConnectionInfo debugConnectionInfo,
-			@Nonnull String fileName)
-	{
-		GeneralCommandLine commandLine = new GeneralCommandLine();
+    @Nonnull
+    public static GeneralCommandLine createDefaultCommandLineImpl(@Nonnull Sdk sdk,
+                                                                  @Nullable DebugConnectionInfo debugConnectionInfo,
+                                                                  @Nonnull String fileName) {
+        GeneralCommandLine commandLine = new GeneralCommandLine();
 
-		String runFile = MonoSdkType.getInstance().getExecutable(sdk);
+        String runFile = MonoSdkType.getInstance().getExecutable(sdk);
 
-		commandLine.setExePath(runFile);
-		if(debugConnectionInfo != null)
-		{
-			commandLine.addParameter("--debug");
-			commandLine.addParameter(generateParameterForRun(debugConnectionInfo));
-		}
-		commandLine.addParameter(fileName);
-		return commandLine;
-	}
+        commandLine.setExePath(runFile);
+        if (debugConnectionInfo != null) {
+            commandLine.addParameter("--debug");
+            commandLine.addParameter(generateParameterForRun(debugConnectionInfo));
+        }
+        commandLine.addParameter(fileName);
+        return commandLine;
+    }
 
-	@Nonnull
-	@Override
-	public String getDebugFileExtension()
-	{
-		return getTarget().getExtension() + ".mdb";
-	}
+    @Nonnull
+    @Override
+    public String getDebugFileExtension() {
+        return getTarget().getExtension() + ".mdb";
+    }
 
-	@Nonnull
-	@Override
-	public String[] getSystemLibraryUrlsImpl(@Nonnull Sdk sdk, @Nonnull String name, @Nonnull OrderRootType orderRootType)
-	{
-		if(orderRootType == DocumentationOrderRootType.getInstance())
-		{
-			String[] systemLibraryUrls = super.getSystemLibraryUrlsImpl(sdk, name, orderRootType);
+    @Nonnull
+    @Override
+    public String[] getSystemLibraryUrlsImpl(@Nonnull Sdk sdk, @Nonnull String name, @Nonnull String orderRootType) {
+        if (DocumentationOrderRootType.ID.equals(orderRootType)) {
+            String[] systemLibraryUrls = super.getSystemLibraryUrlsImpl(sdk, name, orderRootType);
 
-			VirtualFile homeDirectory = sdk.getHomeDirectory();
-			if(homeDirectory == null)
-			{
-				return systemLibraryUrls;
-			}
-			VirtualFile docDir = homeDirectory.findFileByRelativePath("/../../monodoc/sources");
-			if(docDir == null)
-			{
-				return systemLibraryUrls;
-			}
+            VirtualFile homeDirectory = sdk.getHomeDirectory();
+            if (homeDirectory == null) {
+                return systemLibraryUrls;
+            }
+            VirtualFile docDir = homeDirectory.findFileByRelativePath("/../../monodoc/sources");
+            if (docDir == null) {
+                return systemLibraryUrls;
+            }
 
-			List<String> list = new ArrayList<>();
-			ContainerUtil.addAll(list, systemLibraryUrls);
+            List<String> list = new ArrayList<>();
+            ContainerUtil.addAll(list, systemLibraryUrls);
 
-			for(VirtualFile virtualFile : docDir.getChildren())
-			{
-				if(Comparing.equal(virtualFile.getExtension(), "source"))
-				{
-					list.add(virtualFile.getUrl());
-				}
-			}
-			return ArrayUtil.toStringArray(list);
-		}
-		return super.getSystemLibraryUrlsImpl(sdk, name, orderRootType);
-	}
+            for (VirtualFile virtualFile : docDir.getChildren()) {
+                if (Comparing.equal(virtualFile.getExtension(), "source")) {
+                    list.add(virtualFile.getUrl());
+                }
+            }
+            return ArrayUtil.toStringArray(list);
+        }
+        return super.getSystemLibraryUrlsImpl(sdk, name, orderRootType);
+    }
 
-	@Nonnull
-	@Override
-	public File[] getFilesForLibraries()
-	{
-		File[] filesForLibraries = super.getFilesForLibraries();
+    @Nonnull
+    @Override
+    public File[] getFilesForLibraries() {
+        File[] filesForLibraries = super.getFilesForLibraries();
 
-		Sdk sdk = getSdk();
-		if(sdk != null)
-		{
-			File facadesDir = new File(sdk.getHomePath(), "Facades");
-			if(facadesDir.exists())
-			{
-				File[] files = facadesDir.listFiles();
-				filesForLibraries = ArrayUtil.mergeArrays(filesForLibraries, files);
-			}
-		}
-		return filesForLibraries;
-	}
+        Sdk sdk = getSdk();
+        if (sdk != null) {
+            File facadesDir = new File(sdk.getHomePath(), "Facades");
+            if (facadesDir.exists()) {
+                File[] files = facadesDir.listFiles();
+                filesForLibraries = ArrayUtil.mergeArrays(filesForLibraries, files);
+            }
+        }
+        return filesForLibraries;
+    }
 
-	private static String generateParameterForRun(@Nonnull DebugConnectionInfo debugConnectionInfo)
-	{
-		StringBuilder builder = new StringBuilder("--debugger-agent=transport=dt_socket,address=");
-		builder.append(debugConnectionInfo.getHost());
-		builder.append(":");
-		builder.append(debugConnectionInfo.getPort());
-		if(debugConnectionInfo.isServer())
-		{
-			builder.append(",suspend=y,server=y");
-		}
-		else
-		{
-			builder.append(",suspend=y,server=n");
-		}
-		return builder.toString();
-	}
+    private static String generateParameterForRun(@Nonnull DebugConnectionInfo debugConnectionInfo) {
+        StringBuilder builder = new StringBuilder("--debugger-agent=transport=dt_socket,address=");
+        builder.append(debugConnectionInfo.getHost());
+        builder.append(":");
+        builder.append(debugConnectionInfo.getPort());
+        if (debugConnectionInfo.isServer()) {
+            builder.append(",suspend=y,server=y");
+        }
+        else {
+            builder.append(",suspend=y,server=n");
+        }
+        return builder.toString();
+    }
 }
