@@ -23,16 +23,18 @@ import consulo.content.bundle.*;
 import consulo.dataContext.DataContext;
 import consulo.dataContext.DataManager;
 import consulo.dotnet.sdk.DotNetSdkType;
+import consulo.fileChooser.FileChooser;
 import consulo.fileChooser.FileChooserDescriptor;
 import consulo.fileChooser.FileChooserDescriptorFactory;
-import consulo.fileChooser.IdeaFileChooser;
 import consulo.localize.LocalizeValue;
 import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
+import consulo.ui.Component;
+import consulo.ui.MessageBoxes;
+import consulo.ui.UIAccess;
 import consulo.ui.annotation.RequiredUIAccess;
 import consulo.ui.ex.action.ActionGroup;
 import consulo.ui.ex.action.AnAction;
 import consulo.ui.ex.action.AnActionEvent;
-import consulo.ui.ex.awt.Messages;
 import consulo.ui.ex.popup.JBPopupFactory;
 import consulo.ui.ex.popup.ListPopup;
 import consulo.util.lang.Pair;
@@ -41,7 +43,6 @@ import consulo.virtualFileSystem.VirtualFile;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
-import javax.swing.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -174,47 +175,50 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
 
     @Override
     @RequiredUIAccess
-    public void showCustomCreateUI(SdkModel sdkModel, JComponent parentComponent, final Consumer<Sdk> sdkCreatedCallback) {
-        File monoLib = null;
+    public void showCustomCreateUI(SdkModel sdkModel, Component parentComponent, Consumer<Sdk> sdkCreatedCallback) {
         if (SystemInfo.isFreeBSD) {
             File file = new File(ourDefaultFreeBSDCompilerPath);
             if (!file.exists()) {
-                Messages.showErrorDialog(parentComponent, "\'" + ourDefaultFreeBSDCompilerPath + "\' not found. OS: " + SystemInfo.OS_NAME);
+                showError(parentComponent, "\'" + ourDefaultFreeBSDCompilerPath + "\' not found. OS: " + SystemInfo.OS_NAME);
                 return;
             }
-            monoLib = new File("/usr/local/lib/mono");
+            showSdkChooser(parentComponent, new File("/usr/local/lib/mono"), sdkCreatedCallback);
         }
         else if (SystemInfo.isLinux) {
             File file = new File(ourDefaultLinuxCompilerPath);
             if (!file.exists()) {
-                Messages.showErrorDialog(parentComponent, "\'" + ourDefaultLinuxCompilerPath + "\' not found. OS: " + SystemInfo.OS_NAME);
+                showError(parentComponent, "\'" + ourDefaultLinuxCompilerPath + "\' not found. OS: " + SystemInfo.OS_NAME);
                 return;
             }
-            monoLib = new File("/usr/lib/mono");
+            showSdkChooser(parentComponent, new File("/usr/lib/mono"), sdkCreatedCallback);
         }
         else if (SystemInfo.isWindows || SystemInfo.isMac) {
             FileChooserDescriptor singleFolderDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
             String toSelectPath = getDefaultHomePath();
             VirtualFile toSelect = toSelectPath == null ? null : LocalFileSystem.getInstance().findFileByPath(toSelectPath);
-            VirtualFile monoDir = IdeaFileChooser.chooseFile(singleFolderDescriptor, null, toSelect);
-            if (monoDir == null) {
-                return;
-            }
 
-            monoLib = new File(monoDir.getPath(), "lib/mono");
+            UIAccess uiAccess = UIAccess.current();
+            FileChooser.chooseFile(singleFolderDescriptor, null, toSelect).whenComplete((monoDir, error) -> {
+                if (error != null || monoDir == null) {
+                    return;
+                }
+
+                uiAccess.give(() -> showSdkChooser(parentComponent, new File(monoDir.getPath(), "lib/mono"), sdkCreatedCallback));
+            });
         }
-
-        if (monoLib == null) {
-            Messages.showErrorDialog(parentComponent, "Current OS is not supported: " + SystemInfo.OS_NAME);
-            return;
+        else {
+            showError(parentComponent, "Current OS is not supported: " + SystemInfo.OS_NAME);
         }
+    }
 
+    @RequiredUIAccess
+    private void showSdkChooser(Component parentComponent, File monoLib, Consumer<Sdk> sdkCreatedCallback) {
         if (!monoLib.exists()) {
-            Messages.showErrorDialog(parentComponent, "File: " + monoLib.getAbsolutePath() + " is not exists.");
+            showError(parentComponent, "File: " + monoLib.getAbsolutePath() + " is not exists.");
             return;
         }
 
-        List<Pair<String, File>> list = new ArrayList<Pair<String, File>>();
+        List<Pair<String, File>> list = new ArrayList<>();
 
         File[] files = monoLib.listFiles();
         if (files != null) {
@@ -226,7 +230,7 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         }
 
         ActionGroup.Builder b = ActionGroup.newImmutableBuilder();
-        for (final Pair<String, File> pair : list) {
+        for (Pair<String, File> pair : list) {
             b.add(new AnAction(pair.getFirst()) {
                 @RequiredUIAccess
                 @Override
@@ -248,8 +252,14 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
 
         DataContext dataContext = DataManager.getInstance().getDataContext(parentComponent);
 
-        ListPopup choose = JBPopupFactory.getInstance().createActionGroupPopup("Choose", b.build(), dataContext, JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, false);
+        ListPopup choose = JBPopupFactory.getInstance()
+            .createActionGroupPopup("Choose", b.build(), dataContext, JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, false);
 
-        choose.showInCenterOf(parentComponent);
+        choose.showBy(parentComponent, null);
+    }
+
+    @RequiredUIAccess
+    private static void showError(Component parentComponent, String message) {
+        MessageBoxes.okError(LocalizeValue.localizeTODO(message)).showAsync(parentComponent);
     }
 }

@@ -3,9 +3,6 @@
  * @since 05-Sep-22
  */
 module consulo.dotnet.mono {
-    // TODO remove in future
-    requires java.desktop;
-
     requires consulo.dotnet.mono.debugger.impl;
 
     requires consulo.language.api;

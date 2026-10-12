@@ -23,59 +23,40 @@ import consulo.dotnet.module.extension.DotNetMutableModuleExtension;
 import consulo.dotnet.psi.impl.module.extension.DotNetQualifiedElementQualifierProducer;
 import consulo.module.content.layer.ModuleRootLayer;
 import consulo.module.extension.MutableModuleInheritableNamedPointer;
-import consulo.module.extension.swing.SwingMutableModuleExtension;
 import consulo.ui.Component;
-import consulo.ui.Label;
 import consulo.ui.annotation.RequiredUIAccess;
-import consulo.ui.layout.VerticalLayout;
-
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import javax.swing.*;
 
 /**
  * @author VISTALL
  * @since 20.11.13.
  */
-public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension implements DotNetMutableModuleExtension<MonoDotNetModuleExtension>, SwingMutableModuleExtension
-{
-	public MonoDotNetMutableModuleExtension(@Nonnull String id, @Nonnull ModuleRootLayer rootModel)
-	{
-		super(id, rootModel);
-	}
+public class MonoDotNetMutableModuleExtension extends MonoDotNetModuleExtension implements DotNetMutableModuleExtension<MonoDotNetModuleExtension> {
+    public MonoDotNetMutableModuleExtension(@Nonnull String id, @Nonnull ModuleRootLayer rootModel) {
+        super(id, rootModel);
+    }
 
-	@Nonnull
-	@Override
-	public MutableModuleInheritableNamedPointer<Sdk> getInheritableSdk()
-	{
-		return (MutableModuleInheritableNamedPointer<Sdk>) super.getInheritableSdk();
-	}
+    @Nonnull
+    @Override
+    public MutableModuleInheritableNamedPointer<Sdk> getInheritableSdk() {
+        return (MutableModuleInheritableNamedPointer<Sdk>) super.getInheritableSdk();
+    }
 
-	@RequiredUIAccess
-	@Nullable
-	@Override
-	public Component createConfigurationComponent(@Nonnull Disposable disposable, @Nonnull Runnable runnable)
-	{
-		return VerticalLayout.create().add(Label.create("Unsupported platform"));
-	}
+    @RequiredUIAccess
+    @Nullable
+    @Override
+    public Component createConfigurationComponent(@Nonnull Disposable disposable, @Nonnull Runnable runnable) {
+        return DotNetConfigurationPanel.create(this, DotNetQualifiedElementQualifierProducer.INSTANCE, myVariables, disposable, runnable);
+    }
 
-	@RequiredUIAccess
-	@Nullable
-	@Override
-	public JComponent createConfigurablePanel(@Nonnull Disposable disposable, @Nonnull Runnable runnable)
-	{
-		return new DotNetConfigurationPanel(this, DotNetQualifiedElementQualifierProducer.INSTANCE, myVariables, runnable);
-	}
+    @Override
+    public void setEnabled(boolean b) {
+        myIsEnabled = b;
+    }
 
-	@Override
-	public void setEnabled(boolean b)
-	{
-		myIsEnabled = b;
-	}
-
-	@Override
-	public boolean isModified(@Nonnull MonoDotNetModuleExtension extension)
-	{
-		return isModifiedImpl(extension);
-	}
+    @Override
+    public boolean isModified(@Nonnull MonoDotNetModuleExtension extension) {
+        return isModifiedImpl(extension);
+    }
 }
