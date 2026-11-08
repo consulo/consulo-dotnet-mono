@@ -297,43 +297,7 @@ public class MonoBreakpointUtil
 		{
 			for(MethodMirror methodMirror : mirror.methods())
 			{
-				if(methods.containsKey(methodMirror))
-				{
-					continue;
-				}
-
-				if(executableChildrenAtLineIndex != null)
-				{
-					Couple<String> lambdaInfo = DotNetDebuggerCompilerGenerateUtil.extractLambdaInfo(new MonoMethodProxy(methodMirror));
-					if(executableChildrenAtLineIndex == -1 && lambdaInfo != null)
-					{
-						// is lambda - we cant enter it with -1
-						continue;
-					}
-
-					if(executableChildrenAtLineIndex != -1)
-					{
-						if(lambdaInfo == null)
-						{
-							continue;
-						}
-
-						final Method_GetDebugInfo.Entry[] entries = methodMirror.debugInfo();
-						if(entries.length == 0)
-						{
-							continue;
-						}
-
-						boolean acceptable = AccessRule.read(() -> findExecutableElementFromDebugInfo(project, entries, executableChildrenAtLineIndex) != null);
-
-						if(!acceptable)
-						{
-							continue;
-						}
-					}
-				}
-
-				collectLocations(virtualMachine, breakpointLine, methods, methodMirror, targetVFile);
+				collectLambdaAwareLocations(project, virtualMachine, breakpointLine, executableChildrenAtLineIndex, methods, methodMirror, targetVFile);
 			}
 
 			TypeMirror[] nestedTypeMirrors = mirror.nestedTypes();
@@ -349,22 +313,22 @@ public class MonoBreakpointUtil
 						collectLocations(virtualMachine, breakpointLine, methods, moveNext, targetVFile);
 					}
 				}
-				else if(DotNetDebuggerCompilerGenerateUtil.isAsyncLambdaWrapper(typeProxy))
+				else if(DotNetDebuggerCompilerGenerateUtil.isLambdaHolderType(typeProxy))
 				{
-					TypeMirror[] typeMirrors = nestedTypeMirror.nestedTypes();
-					if(typeMirrors.length > 0)
+					// the lambdas of the methods: in <>c without captured variables, in a closure type with them
+					for(MethodMirror lambdaMirror : nestedTypeMirror.methods())
 					{
-						MethodMirror moveNext = typeMirrors[0].findMethodByName("MoveNext", false);
+						collectLambdaAwareLocations(project, virtualMachine, breakpointLine, executableChildrenAtLineIndex, methods, lambdaMirror, targetVFile);
+					}
 
+					// the state machines of async lambdas and of iterators inside them
+					for(TypeMirror stateMachine : nestedTypeMirror.nestedTypes())
+					{
+						MethodMirror moveNext = stateMachine.findMethodByName("MoveNext", false);
 						if(moveNext != null)
 						{
 							collectLocations(virtualMachine, breakpointLine, methods, moveNext, targetVFile);
 						}
-					}
-
-					for(MethodMirror nestedMetohdMirror : nestedTypeMirror.methods())
-					{
-						collectLocations(virtualMachine, breakpointLine, methods, nestedMetohdMirror, targetVFile);
 					}
 				}
 			}
@@ -375,6 +339,56 @@ public class MonoBreakpointUtil
 		}
 
 		return methods.isEmpty() ? FindLocationResult.NO_LOCATIONS : FindLocationResult.success(methods.values());
+	}
+
+	/**
+	 * A breakpoint of a line (-1) is not in the lambdas on the line, a breakpoint of a lambda (its index) is in that lambda only;
+	 * without lambdas on the line (null) - any method
+	 */
+	private static void collectLambdaAwareLocations(Project project,
+													MonoVirtualMachineProxy virtualMachine,
+													int breakpointLine,
+													@Nullable Integer executableChildrenAtLineIndex,
+													Map<MethodMirror, Location> methods,
+													MethodMirror methodMirror,
+													VirtualFile targetVFile)
+	{
+		if(methods.containsKey(methodMirror))
+		{
+			return;
+		}
+
+		if(executableChildrenAtLineIndex != null)
+		{
+			Couple<String> lambdaInfo = DotNetDebuggerCompilerGenerateUtil.extractLambdaInfo(new MonoMethodProxy(methodMirror));
+			if(executableChildrenAtLineIndex == -1 && lambdaInfo != null)
+			{
+				// is lambda - we cant enter it with -1
+				return;
+			}
+
+			if(executableChildrenAtLineIndex != -1)
+			{
+				if(lambdaInfo == null)
+				{
+					return;
+				}
+
+				final Method_GetDebugInfo.Entry[] entries = methodMirror.debugInfo();
+				if(entries.length == 0)
+				{
+					return;
+				}
+
+				boolean acceptable = AccessRule.read(() -> findExecutableElementFromDebugInfo(project, entries, executableChildrenAtLineIndex) != null);
+				if(!acceptable)
+				{
+					return;
+				}
+			}
+		}
+
+		collectLocations(virtualMachine, breakpointLine, methods, methodMirror, targetVFile);
 	}
 
 	@RequiredReadAction
