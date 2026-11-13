@@ -28,6 +28,9 @@ import consulo.fileChooser.FileChooserDescriptor;
 import consulo.fileChooser.FileChooserDescriptorFactory;
 import consulo.localize.LocalizeValue;
 import consulo.mono.dotnet.icon.MonoDotNetIconGroup;
+import consulo.platform.Platform;
+import consulo.platform.PlatformFileSystem;
+import consulo.platform.PlatformOperatingSystem;
 import consulo.ui.Component;
 import consulo.ui.MessageBoxes;
 import consulo.ui.UIAccess;
@@ -44,11 +47,13 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * @author VISTALL
@@ -66,23 +71,28 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         "C:/Program Files (x86)/Mono/"
     };
 
+    /**
+     * The mono of the machine of the bundle.
+     */
     @Nonnull
     public String getExecutable(@Nonnull Sdk sdk) {
+        Platform platform = sdk.getPlatform();
+        PlatformOperatingSystem os = platform.os();
         String runFile;
-        if (SystemInfo.isWindows) {
+        if (os.isWindows()) {
             runFile = sdk.getHomePath() + "/../../../bin/mono.exe";
         }
-        else if (SystemInfo.isMac) {
+        else if (os.isMac()) {
             runFile = sdk.getHomePath() + "/../../../bin/mono";
         }
-        else if (SystemInfo.isFreeBSD) {
+        else if (os.isFreeBSD()) {
             runFile = "/usr/local/bin/mono";
         }
-        else if (SystemInfo.isLinux) {
+        else if (os.isLinux()) {
             runFile = "/usr/bin/mono";
         }
         else {
-            throw new UnsupportedOperationException(SystemInfo.OS_NAME);
+            throw new UnsupportedOperationException(platform.getName());
         }
         return runFile;
     }
@@ -96,70 +106,65 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         super("MONO_DOTNET_SDK", LocalizeValue.localizeTODO("Mono"), MonoDotNetIconGroup.mono());
     }
 
-    @Nonnull
     @Override
-    public Collection<String> suggestHomePaths() {
-        String defaultHomePath = getDefaultHomePath();
+    public void collectHomePaths(@Nonnull Platform platform, @Nonnull Consumer<Path> consumer) {
+        Path defaultHomePath = getDefaultHomePath(platform);
         if (defaultHomePath == null) {
-            return Collections.emptyList();
+            return;
         }
-        File dir = new File(defaultHomePath, "lib/mono");
-        if (!dir.exists()) {
-            return Collections.emptyList();
+        try (Stream<Path> children = Files.list(defaultHomePath.resolve("lib/mono"))) {
+            children.forEach(consumer);
         }
-        List<String> list = new ArrayList<>(1);
-        for (File file : dir.listFiles()) {
-            list.add(file.getPath());
+        catch (IOException ignored) {
         }
-        return list;
     }
 
     @Override
-    public boolean canCreatePredefinedSdks() {
+    public boolean canCreatePredefinedSdks(@Nonnull Platform platform) {
         return true;
     }
 
     @Nullable
-    private String getDefaultHomePath() {
-        if (SystemInfo.isWindows) {
+    private Path getDefaultHomePath(@Nonnull Platform platform) {
+        PlatformOperatingSystem os = platform.os();
+        PlatformFileSystem fs = platform.fs();
+        if (os.isWindows()) {
             for (String monoPath : ourMonoPaths) {
-                File file = new File(monoPath);
-                if (file.exists()) {
-                    return monoPath;
+                Path path = fs.getPath(monoPath);
+                if (Files.exists(path)) {
+                    return path;
                 }
             }
-            return ourMonoPaths[0];
+            return fs.getPath(ourMonoPaths[0]);
         }
 
-        if (SystemInfo.isMac) {
-            return "/Library/Frameworks/Mono.framework/Home/";
+        if (os.isMac()) {
+            return fs.getPath("/Library/Frameworks/Mono.framework/Home/");
         }
 
-        if (SystemInfo.isFreeBSD) {
-            File file = new File(ourDefaultFreeBSDCompilerPath);
-            if (file.exists()) {
-                return "/usr/local/";
+        if (os.isFreeBSD()) {
+            if (Files.exists(fs.getPath(ourDefaultFreeBSDCompilerPath))) {
+                return fs.getPath("/usr/local/");
             }
         }
 
-        if (SystemInfo.isLinux) {
-            File file = new File(ourDefaultLinuxCompilerPath);
-            if (file.exists()) {
-                return "/usr/";
+        if (os.isLinux()) {
+            if (Files.exists(fs.getPath(ourDefaultLinuxCompilerPath))) {
+                return fs.getPath("/usr/");
             }
         }
         return null;
     }
 
     @Override
-    public boolean isValidSdkHome(String s) {
-        return new File(s, "mscorlib.dll").exists();
+    public boolean isValidSdkHome(@Nonnull Platform platform, @Nonnull Path path) {
+        return Files.exists(path.resolve("mscorlib.dll"));
     }
 
     @Nullable
     @Override
-    public String getVersionString(String path) {
-        String directoryName = new File(path).getName();
+    public String getVersionString(@Nonnull Platform platform, @Nonnull Path path) {
+        String directoryName = path.getFileName().toString();
         if (directoryName.endsWith(apiVer)) {
             return directoryName.substring(0, directoryName.length() - apiVer.length());
         }
@@ -168,9 +173,8 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
 
     @Nonnull
     @Override
-    public String suggestSdkName(String currentSdkName, String sdkHome) {
-        File file = new File(sdkHome);
-        return getDisplayName().get() + " " + file.getName();
+    public String suggestSdkName(@Nonnull Platform platform, @Nullable String currentSdkName, @Nonnull Path sdkHome) {
+        return getDisplayName().get() + " " + sdkHome.getFileName();
     }
 
     @Override
@@ -194,8 +198,8 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         }
         else if (SystemInfo.isWindows || SystemInfo.isMac) {
             FileChooserDescriptor singleFolderDescriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-            String toSelectPath = getDefaultHomePath();
-            VirtualFile toSelect = toSelectPath == null ? null : LocalFileSystem.getInstance().findFileByPath(toSelectPath);
+            Path toSelectPath = getDefaultHomePath(Platform.current());
+            VirtualFile toSelect = toSelectPath == null ? null : LocalFileSystem.getInstance().findFileByNioFile(toSelectPath);
 
             UIAccess uiAccess = UIAccess.current();
             FileChooser.chooseFile(singleFolderDescriptor, null, toSelect).whenComplete((monoDir, error) -> {
@@ -223,7 +227,7 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
         File[] files = monoLib.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (isValidSdkHome(file.getAbsolutePath())) {
+                if (isValidSdkHome(Platform.current(), file.toPath())) {
                     list.add(Pair.create(file.getName(), file));
                 }
             }
@@ -241,7 +245,7 @@ public class MonoSdkType extends DotNetSdkType implements SdkTypeWithCustomCreat
                     String uniqueSdkName = SdkUtil.createUniqueSdkName(MonoSdkType.this, absolutePath, SdkTable.getInstance().getAllSdks());
                     Sdk sdk = SdkTable.getInstance().createSdk(uniqueSdkName, MonoSdkType.this);
                     SdkModificator modificator = sdk.getSdkModificator();
-                    modificator.setVersionString(getVersionString(absolutePath));
+                    modificator.setVersionString(getVersionString(Platform.current(), path.toPath()));
                     modificator.setHomePath(absolutePath);
                     modificator.commitChanges();
 
