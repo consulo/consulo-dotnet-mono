@@ -34,6 +34,7 @@ import consulo.execution.debug.breakpoint.XBreakpointType;
 import consulo.execution.debug.breakpoint.XLineBreakpoint;
 import consulo.execution.debug.event.XBreakpointListener;
 import consulo.execution.debug.frame.XSuspendContext;
+import consulo.execution.debug.step.HasRunToPosition;
 import consulo.execution.debug.localize.XDebuggerLocalize;
 import consulo.localize.LocalizeValue;
 import jakarta.annotation.Nonnull;
@@ -53,7 +54,7 @@ import java.util.Collection;
  * @author VISTALL
  * @since 10.04.14
  */
-public class MonoDebugProcess extends DotNetDebugProcessBase {
+public class MonoDebugProcess extends DotNetDebugProcessBase implements HasRunToPosition {
     private class MyXBreakpointListener implements XBreakpointListener<XBreakpoint<?>> {
         @Override
         public void breakpointAdded(@Nonnull final XBreakpoint<?> breakpoint) {
